@@ -1,6 +1,6 @@
 import { Injectable, Logger } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
-import nodemailer from 'nodemailer';
+import nodemailer, { type Transporter } from 'nodemailer';
 import { escapeHtml } from '../common/utils/escape-html.js';
 
 export interface InvitationMailInput {
@@ -17,7 +17,7 @@ export interface InvitationMailInput {
 @Injectable()
 export class MailService {
   private readonly log = new Logger(MailService.name);
-  private readonly transporter: nodemailer.Transporter;
+  private readonly transporter: Transporter;
   private readonly from: string;
   private readonly dryRun: boolean;
 
