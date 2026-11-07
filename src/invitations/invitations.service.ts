@@ -1,3 +1,4 @@
+import { randomBytes } from 'node:crypto';
 import { Injectable, NotFoundException, PayloadTooLargeException } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
@@ -105,7 +106,8 @@ export class InvitationsService {
     const inv = this.repo.create({
       owner: userId,
       title: dto.title,
-      slug: slugify(dto.title),
+      // Hậu tố ngẫu nhiên để hai thiệp cùng tên không đụng nhau (slug có ràng buộc unique)
+      slug: `${slugify(dto.title).slice(0, 80) || 'thiep'}-${randomBytes(4).toString('hex')}`,
       eventType: dto.eventType ?? 'wedding',
       templateSlug: dto.templateSlug ?? null,
       eventDate: dto.eventDate ? new Date(dto.eventDate) : null,
@@ -227,7 +229,7 @@ export class InvitationsService {
       _id: inv._id, slug: inv.slug, title: inv.title, eventType: inv.eventType, templateSlug: inv.templateSlug,
       eventDate: inv.eventDate, cover: inv.cover, info: inv.info, page: inv.page, design: inv.design,
       settings: {
-        allowRsvp: s.allowRsvp, allowWishes: s.allowWishes, showGuestList: s.showGuestList,
+        allowRsvp: s.allowRsvp, allowWishes: s.allowWishes, moderateWishes: s.moderateWishes, showGuestList: s.showGuestList,
         maxCompanions: s.maxCompanions, rsvpDeadline: s.rsvpDeadline,
       },
       guest,
