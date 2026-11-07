@@ -1,5 +1,6 @@
 import { Module } from '@nestjs/common';
 import { MongooseModule } from '@nestjs/mongoose';
+import { PassportModule } from '@nestjs/passport';
 import { InvitationsController, PublicInvitationsController } from './invitations.controller.js';
 import { InvitationsService } from './invitations.service.js';
 import { Invitation, InvitationSchema } from './schemas/invitation.schema.js';
@@ -15,6 +16,7 @@ import { Wish, WishSchema } from '../wishes/schemas/wish.schema.js';
       { name: GuestGroup.name, schema: GuestGroupSchema },
       { name: Wish.name, schema: WishSchema },
     ]),
+    PassportModule,
   ],
   // PublicInvitationsController đứng trước để /invitations/public/:id không bị :id nuốt
   controllers: [PublicInvitationsController, InvitationsController],
