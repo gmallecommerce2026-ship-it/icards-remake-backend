@@ -13,6 +13,7 @@ import { WishesModule } from './wishes/wishes.module.js';
 import { TemplatesModule } from './templates/templates.module.js';
 import { PagesModule } from './pages/pages.module.js';
 import { ProductsModule } from './products/products.module.js';
+import { ServicesModule } from './services/services.module.js';
 import { SettingsModule } from './settings/settings.module.js';
 import { AppController } from './app.controller.js';
 import { AppService } from './app.service.js';
@@ -47,6 +48,7 @@ import { AppService } from './app.service.js';
     TemplatesModule,
     PagesModule,
     ProductsModule,
+    ServicesModule,
     SettingsModule,
   ],
   controllers: [AppController],

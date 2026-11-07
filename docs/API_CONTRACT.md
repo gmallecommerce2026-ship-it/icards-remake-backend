@@ -80,3 +80,24 @@ Guest: `{_id,name,email,phone,group:{_id,name,color}|null,status,companions,gift
 🔒 GET `/wishes/admin/:invitationId?page&limit` → `{items,total,pending,…}` · 🔒 PUT `/wishes/:wishId` `{isApproved?, message?}` · 🔒 DELETE `/wishes/:wishId`
 
 ## Chưa làm (Phase 2): `/invitation-templates`, `/template-blocks`, `/fonts`, `/design-assets`, `/products`, `/pages`, `/public/*`, social login.
+
+## Catalog công khai 🌐 (dữ liệu seed từ FE — `npm run seed`)
+Tất cả là GET, không cần đăng nhập, không bị rate-limit theo IP (trừ khi ghi chú khác). Chỉ trả bản ghi `isPublished = true`.
+
+| Method | Path | Query | Trả về |
+|---|---|---|---|
+| GET | /invitation-templates | `category`, `search`, `sort` (popular\|newest\|price-asc), `limit` (1-50) | `InvitationTemplate[]` (shape khớp `src/lib/templates.ts`; `createdAt` = ngày phát hành) |
+| GET | /invitation-templates/:idOrSlug | | `InvitationTemplate` hoặc 404 |
+| POST | /invitation-templates/:idOrSlug/view | | `{ok}` — tăng `popularity` (30 lần/phút) |
+| GET | /products | `category` (print\|onsite\|digital), `search`, `limit` | `Product[]` (shape khớp `src/lib/shop.ts`) |
+| GET | /products/:idOrSlug | | `Product` hoặc 404 |
+| GET | /services | | `Service[]` |
+| GET | /services/:slug | | `Service` hoặc 404 |
+| POST | /service-requests | body `{service, name, phone, eventDate?, note?}` (5 lần/phút) | `{_id, status, createdAt}` — 400 nếu dịch vụ không tồn tại |
+| GET | /pages | `isBlog` (true\|false), `category`, `limit` | `Post[]` không kèm `content` |
+| GET | /pages/faq | | `{groups: {slug,label}[], items: {id,group,q,a}[]}` |
+| GET | /pages/:slug | | `Post` đầy đủ kèm `content` (blocks) hoặc 404 |
+| GET | /public/settings | | cấu hình chung (hiện trả `{}` cho đến khi có dữ liệu) |
+| GET | /public/content/:key | | danh mục/cấu hình; key thuộc whitelist: `templates.categories`, `shop.categories`, `services.process`, `blog.categories`, `faq.groups`, `professional.process`, `professional.tiers`, `professional.portfolio` |
+
+Lưu ý: `_id` của mọi bản ghi seed là sha1(namespace:slug) nên ổn định giữa các lần seed.
