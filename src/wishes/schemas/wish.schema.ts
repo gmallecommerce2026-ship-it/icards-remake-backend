@@ -1,16 +1,24 @@
-import { Prop, Schema, SchemaFactory } from '@nestjs/mongoose';
-import { Types, type HydratedDocument } from 'mongoose';
+import { Column, Entity, Index } from 'typeorm';
+import { BaseEntity } from '../../common/entities/base.entity.js';
 
-@Schema({ timestamps: true })
-export class Wish {
-  @Prop({ type: Types.ObjectId, ref: 'Invitation', required: true, index: true }) invitation: Types.ObjectId;
-  @Prop({ type: Types.ObjectId, ref: 'Guest', default: null }) guest: Types.ObjectId | null;
-  @Prop({ required: true, trim: true, maxlength: 80 }) name: string;
-  @Prop({ required: true, trim: true, maxlength: 1000 }) message: string;
+@Entity('wishes')
+@Index(['invitation', 'createdAt'])
+export class Wish extends BaseEntity {
+  @Index()
+  @Column({ type: 'char', length: 24 })
+  invitation: string;
+
+  @Column({ type: 'char', length: 24, nullable: true })
+  guest: string | null;
+
+  @Column({ type: 'varchar', length: 80 })
+  name: string;
+
+  @Column({ type: 'text' })
+  message: string;
+
   /** false: đang chờ duyệt / bị ẩn */
-  @Prop({ default: true, index: true }) isApproved: boolean;
+  @Index()
+  @Column({ type: 'boolean', default: true })
+  isApproved: boolean;
 }
-
-export type WishDocument = HydratedDocument<Wish>;
-export const WishSchema = SchemaFactory.createForClass(Wish);
-WishSchema.index({ invitation: 1, createdAt: -1 });

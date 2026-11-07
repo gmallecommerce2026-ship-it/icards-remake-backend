@@ -1,13 +1,16 @@
-import { Prop, Schema, SchemaFactory } from '@nestjs/mongoose';
-import { Types, type HydratedDocument } from 'mongoose';
+import { Column, Entity, Index, Unique } from 'typeorm';
+import { BaseEntity } from '../../common/entities/base.entity.js';
 
-@Schema({ timestamps: true })
-export class GuestGroup {
-  @Prop({ type: Types.ObjectId, ref: 'Invitation', required: true, index: true }) invitation: Types.ObjectId;
-  @Prop({ required: true, trim: true, maxlength: 60 }) name: string;
-  @Prop({ trim: true, maxlength: 20 }) color?: string;
+@Entity('guest_groups')
+@Unique('uq_guest_group_name', ['invitation', 'name'])
+export class GuestGroup extends BaseEntity {
+  @Index()
+  @Column({ type: 'char', length: 24 })
+  invitation: string;
+
+  @Column({ type: 'varchar', length: 60 })
+  name: string;
+
+  @Column({ type: 'varchar', length: 20, nullable: true })
+  color?: string | null;
 }
-
-export type GuestGroupDocument = HydratedDocument<GuestGroup>;
-export const GuestGroupSchema = SchemaFactory.createForClass(GuestGroup);
-GuestGroupSchema.index({ invitation: 1, name: 1 }, { unique: true });

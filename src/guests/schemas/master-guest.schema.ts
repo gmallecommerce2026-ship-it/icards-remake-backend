@@ -1,17 +1,24 @@
-import { Prop, Schema, SchemaFactory } from '@nestjs/mongoose';
-import { Types, type HydratedDocument } from 'mongoose';
+import { Column, Entity, Index } from 'typeorm';
+import { BaseEntity } from '../../common/entities/base.entity.js';
 
 /** "Danh bạ" khách mời của một chủ thiệp, dùng chung giữa các thiệp. */
-@Schema({ timestamps: true })
-export class MasterGuest {
-  @Prop({ type: Types.ObjectId, ref: 'User', required: true, index: true }) owner: Types.ObjectId;
-  @Prop({ required: true, trim: true, maxlength: 120 }) name: string;
-  @Prop({ trim: true, lowercase: true, maxlength: 200 }) email?: string;
-  @Prop({ trim: true, maxlength: 20 }) phone?: string;
-  @Prop({ trim: true, maxlength: 60 }) groupName?: string;
-}
+@Entity('master_guests')
+@Index(['owner', 'email'], { unique: true })
+@Index(['owner', 'phone'], { unique: true })
+export class MasterGuest extends BaseEntity {
+  @Index()
+  @Column({ type: 'char', length: 24 })
+  owner: string;
 
-export type MasterGuestDocument = HydratedDocument<MasterGuest>;
-export const MasterGuestSchema = SchemaFactory.createForClass(MasterGuest);
-MasterGuestSchema.index({ owner: 1, email: 1 }, { unique: true, partialFilterExpression: { email: { $type: 'string' } } });
-MasterGuestSchema.index({ owner: 1, phone: 1 }, { unique: true, partialFilterExpression: { phone: { $type: 'string' } } });
+  @Column({ type: 'varchar', length: 120 })
+  name: string;
+
+  @Column({ type: 'varchar', length: 200, nullable: true })
+  email?: string | null;
+
+  @Column({ type: 'varchar', length: 20, nullable: true })
+  phone?: string | null;
+
+  @Column({ type: 'varchar', length: 60, nullable: true })
+  groupName?: string | null;
+}

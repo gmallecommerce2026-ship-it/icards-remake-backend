@@ -1,22 +1,48 @@
-import { Prop, Schema, SchemaFactory } from '@nestjs/mongoose';
-import type { HydratedDocument } from 'mongoose';
+import { Column, Entity, Index } from 'typeorm';
+import { BaseEntity } from '../../common/entities/base.entity.js';
 
-@Schema({ timestamps: true })
-export class User {
-  @Prop({ required: true, unique: true, trim: true, minlength: 3, maxlength: 40 }) username: string;
-  @Prop({ required: true, unique: true, lowercase: true, trim: true }) email: string;
-  @Prop({ select: false }) password?: string;
-  @Prop({ trim: true, maxlength: 100 }) fullName?: string;
-  @Prop({ trim: true, maxlength: 20 }) phone?: string;
-  @Prop() avatar?: string;
-  @Prop({ type: String, enum: ['user', 'admin'], default: 'user' }) role: 'user' | 'admin';
-  @Prop({ default: true }) isActive: boolean;
-  @Prop({ type: [String], default: [] }) personalImages: string[];
-  @Prop({ sparse: true, unique: true }) googleId?: string;
-  @Prop({ sparse: true, unique: true }) facebookId?: string;
-  @Prop({ select: false }) resetPasswordHash?: string;
-  @Prop({ select: false }) resetPasswordExpires?: Date;
+@Entity('users')
+export class User extends BaseEntity {
+  @Index({ unique: true })
+  @Column({ type: 'varchar', length: 40 })
+  username: string;
+
+  @Index({ unique: true })
+  @Column({ type: 'varchar', length: 200 })
+  email: string;
+
+  @Column({ type: 'varchar', length: 100, nullable: true, select: false })
+  password?: string | null;
+
+  @Column({ type: 'varchar', length: 100, nullable: true })
+  fullName?: string | null;
+
+  @Column({ type: 'varchar', length: 20, nullable: true })
+  phone?: string | null;
+
+  @Column({ type: 'varchar', length: 1000, nullable: true })
+  avatar?: string | null;
+
+  @Column({ type: 'enum', enum: ['user', 'admin'], default: 'user' })
+  role: 'user' | 'admin';
+
+  @Column({ type: 'boolean', default: true })
+  isActive: boolean;
+
+  @Column({ type: 'json', nullable: true })
+  personalImages: string[] | null;
+
+  @Index({ unique: true })
+  @Column({ type: 'varchar', length: 64, nullable: true })
+  googleId?: string | null;
+
+  @Index({ unique: true })
+  @Column({ type: 'varchar', length: 64, nullable: true })
+  facebookId?: string | null;
+
+  @Column({ type: 'varchar', length: 128, nullable: true, select: false })
+  resetPasswordHash?: string | null;
+
+  @Column({ type: 'datetime', nullable: true, select: false })
+  resetPasswordExpires?: Date | null;
 }
-
-export type UserDocument = HydratedDocument<User>;
-export const UserSchema = SchemaFactory.createForClass(User);

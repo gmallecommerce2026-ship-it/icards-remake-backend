@@ -1,8 +1,8 @@
 import { Injectable, UnauthorizedException } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
-import { InjectModel } from '@nestjs/mongoose';
+import { InjectRepository } from '@nestjs/typeorm';
 import { PassportStrategy } from '@nestjs/passport';
-import { Model } from 'mongoose';
+import { Repository } from 'typeorm';
 import { ExtractJwt, Strategy } from 'passport-jwt';
 import type { Request } from 'express';
 import { User } from '../../users/schemas/user.schema.js';
@@ -10,7 +10,7 @@ import type { JwtUser } from '../../common/decorators/current-user.decorator.js'
 
 @Injectable()
 export class JwtStrategy extends PassportStrategy(Strategy) {
-  constructor(cfg: ConfigService, @InjectModel(User.name) private readonly users: Model<User>) {
+  constructor(cfg: ConfigService, @InjectRepository(User) private readonly users: Repository<User>) {
     const cookieName = cfg.get<string>('COOKIE_NAME') ?? 'icards_token';
     super({
       jwtFromRequest: ExtractJwt.fromExtractors([
@@ -23,8 +23,8 @@ export class JwtStrategy extends PassportStrategy(Strategy) {
   }
 
   async validate(payload: { sub: string }): Promise<JwtUser> {
-    const u = await this.users.findById(payload.sub).select('role isActive').lean();
+    const u = await this.users.findOne({ where: { _id: payload.sub } });
     if (!u || !u.isActive) throw new UnauthorizedException();
-    return { userId: String(u._id), role: u.role };
+    return { userId: u._id, role: u.role };
   }
 }

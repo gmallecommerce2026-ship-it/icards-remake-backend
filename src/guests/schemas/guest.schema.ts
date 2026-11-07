@@ -1,37 +1,69 @@
-import { Prop, Schema, SchemaFactory } from '@nestjs/mongoose';
-import { Types, type HydratedDocument } from 'mongoose';
+import { Column, Entity, Index } from 'typeorm';
+import { BaseEntity } from '../../common/entities/base.entity.js';
 
 export const RSVP = ['pending', 'attending', 'declined'] as const;
 export type RsvpStatus = (typeof RSVP)[number];
 export const EMAIL_STATUS = ['not-sent', 'sent', 'failed'] as const;
 export type EmailStatus = (typeof EMAIL_STATUS)[number];
 
-@Schema({ timestamps: true })
-export class Guest {
-  @Prop({ type: Types.ObjectId, ref: 'Invitation', required: true, index: true }) invitation: Types.ObjectId;
-  @Prop({ type: Types.ObjectId, ref: 'User', required: true }) owner: Types.ObjectId;
-  @Prop({ required: true, trim: true, maxlength: 120 }) name: string;
-  @Prop({ trim: true, lowercase: true, maxlength: 200 }) email?: string;
-  @Prop({ trim: true, maxlength: 20 }) phone?: string;
-  @Prop({ type: Types.ObjectId, ref: 'GuestGroup', default: null }) group: Types.ObjectId | null;
-  @Prop({ type: String, enum: RSVP, default: 'pending' }) status: RsvpStatus;
+@Entity('guests')
+@Index(['invitation', 'email'])
+@Index(['invitation', 'status'])
+export class Guest extends BaseEntity {
+  @Index()
+  @Column({ type: 'char', length: 24 })
+  invitation: string;
+
+  @Column({ type: 'char', length: 24 })
+  owner: string;
+
+  @Column({ type: 'varchar', length: 120 })
+  name: string;
+
+  @Column({ type: 'varchar', length: 200, nullable: true })
+  email?: string | null;
+
+  @Column({ type: 'varchar', length: 20, nullable: true })
+  phone?: string | null;
+
+  /** Lưu id nhóm; API trả về object `group` (xem GuestsService.withGroup) */
+  @Column({ type: 'char', length: 24, nullable: true })
+  groupId: string | null;
+
+  @Column({ type: 'enum', enum: RSVP, default: 'pending' })
+  status: RsvpStatus;
+
   /** "Đi cùng": số người đi kèm */
-  @Prop({ default: 0, min: 0, max: 20 }) companions: number;
+  @Column({ type: 'int', default: 0 })
+  companions: number;
+
   /** "Mừng cưới" (VND) */
-  @Prop({ default: 0, min: 0 }) giftAmount: number;
-  @Prop({ trim: true, maxlength: 1000 }) note?: string;
-  @Prop({ trim: true, maxlength: 1000 }) rsvpMessage?: string;
-  @Prop({ type: Date }) respondedAt?: Date;
+  @Column({ type: 'double', default: 0 })
+  giftAmount: number;
+
+  @Column({ type: 'varchar', length: 1000, nullable: true })
+  note?: string | null;
+
+  @Column({ type: 'varchar', length: 1000, nullable: true })
+  rsvpMessage?: string | null;
+
+  @Column({ type: 'datetime', nullable: true })
+  respondedAt?: Date | null;
 
   /** Mã bí mật trong link thiệp cá nhân hoá (?guestId=<token>) */
-  @Prop({ required: true, unique: true }) token: string;
-  @Prop({ type: String, enum: EMAIL_STATUS, default: 'not-sent' }) emailStatus: EmailStatus;
-  @Prop({ type: Date }) emailSentAt?: Date;
-  @Prop() emailError?: string;
-  @Prop({ default: 0 }) emailAttempts: number;
-}
+  @Index({ unique: true })
+  @Column({ type: 'varchar', length: 64 })
+  token: string;
 
-export type GuestDocument = HydratedDocument<Guest>;
-export const GuestSchema = SchemaFactory.createForClass(Guest);
-GuestSchema.index({ invitation: 1, email: 1 });
-GuestSchema.index({ invitation: 1, status: 1 });
+  @Column({ type: 'enum', enum: EMAIL_STATUS, default: 'not-sent' })
+  emailStatus: EmailStatus;
+
+  @Column({ type: 'datetime', nullable: true })
+  emailSentAt?: Date | null;
+
+  @Column({ type: 'varchar', length: 300, nullable: true })
+  emailError?: string | null;
+
+  @Column({ type: 'int', default: 0 })
+  emailAttempts: number;
+}

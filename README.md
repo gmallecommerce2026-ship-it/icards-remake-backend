@@ -4,12 +4,12 @@ Backend cho iCards: thiệp mời điện tử. Tài liệu endpoint: [`docs/API
 
 ## Chạy thử
 ```bash
-cp .env.example .env      # điền MONGO_URI và JWT_SECRET (≥32 ký tự)
+cp .env.example .env      # điền DB_* (MySQL) và JWT_SECRET (≥32 ký tự)
 npm install
 npm run dev               # hoặc: npm run start:dev
 ```
 - Chưa điền `EMAIL_USER/EMAIL_PASS` → gửi email ở chế độ **DRY-RUN**: link thiệp được in ra console backend.
-- Chưa điền cấu hình R2 → upload ảnh bị tắt (ảnh data-URL trong thiết kế được giữ nguyên trong Mongo, tối đa ~12MB/thiệp).
+- Chưa điền cấu hình R2 → upload ảnh bị tắt (ảnh data-URL trong thiết kế được giữ nguyên trong DB, tối đa ~12MB/thiệp).
 - Cookie: dev `SameSite=Lax`; production mặc định `SameSite=None; Secure` (cần HTTPS). Đổi bằng `COOKIE_SAME_SITE`.
 
 ## Cấu trúc

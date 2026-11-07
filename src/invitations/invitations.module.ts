@@ -1,26 +1,18 @@
 import { Module } from '@nestjs/common';
-import { MongooseModule } from '@nestjs/mongoose';
+import { TypeOrmModule } from '@nestjs/typeorm';
 import { PassportModule } from '@nestjs/passport';
 import { InvitationsController, PublicInvitationsController } from './invitations.controller.js';
 import { InvitationsService } from './invitations.service.js';
-import { Invitation, InvitationSchema } from './schemas/invitation.schema.js';
-import { Guest, GuestSchema } from '../guests/schemas/guest.schema.js';
-import { GuestGroup, GuestGroupSchema } from '../guests/schemas/guest-group.schema.js';
-import { Wish, WishSchema } from '../wishes/schemas/wish.schema.js';
+import { Invitation } from './schemas/invitation.schema.js';
+import { Guest } from '../guests/schemas/guest.schema.js';
+import { GuestGroup } from '../guests/schemas/guest-group.schema.js';
+import { Wish } from '../wishes/schemas/wish.schema.js';
 
 @Module({
-  imports: [
-    MongooseModule.forFeature([
-      { name: Invitation.name, schema: InvitationSchema },
-      { name: Guest.name, schema: GuestSchema },
-      { name: GuestGroup.name, schema: GuestGroupSchema },
-      { name: Wish.name, schema: WishSchema },
-    ]),
-    PassportModule,
-  ],
+  imports: [TypeOrmModule.forFeature([Invitation, Guest, GuestGroup, Wish]), PassportModule.register({})],
   // PublicInvitationsController đứng trước để /invitations/public/:id không bị :id nuốt
   controllers: [PublicInvitationsController, InvitationsController],
   providers: [InvitationsService],
-  exports: [InvitationsService, MongooseModule],
+  exports: [InvitationsService],
 })
 export class InvitationsModule {}

@@ -1,7 +1,7 @@
 import { Module } from '@nestjs/common';
 import { ConfigModule, ConfigService } from '@nestjs/config';
 import { APP_GUARD } from '@nestjs/core';
-import { MongooseModule } from '@nestjs/mongoose';
+import { TypeOrmModule } from '@nestjs/typeorm';
 import { ThrottlerGuard, ThrottlerModule } from '@nestjs/throttler';
 import { MailModule } from './mail/mail.module.js';
 import { StorageModule } from './storage/storage.module.js';
@@ -20,9 +20,21 @@ import { AppService } from './app.service.js';
 @Module({
   imports: [
     ConfigModule.forRoot({ isGlobal: true }),
-    MongooseModule.forRootAsync({
+    TypeOrmModule.forRootAsync({
       inject: [ConfigService],
-      useFactory: (cfg: ConfigService) => ({ uri: cfg.getOrThrow<string>('MONGO_URI') }),
+      useFactory: (cfg: ConfigService) => ({
+        type: 'mysql',
+        host: cfg.get<string>('DB_HOST') ?? '127.0.0.1',
+        port: Number(cfg.get<string>('DB_PORT') ?? 3306),
+        username: cfg.getOrThrow<string>('DB_USER'),
+        password: cfg.getOrThrow<string>('DB_PASSWORD'),
+        database: cfg.getOrThrow<string>('DB_NAME'),
+        charset: 'utf8mb4',
+        timezone: 'Z',
+        autoLoadEntities: true,
+        // Bật khi tạo DB mới; khi đã có dữ liệu thật, đặt DB_SYNCHRONIZE=false
+        synchronize: cfg.get<string>('DB_SYNCHRONIZE') !== 'false',
+      }),
     }),
     ThrottlerModule.forRoot([{ ttl: 60_000, limit: 100 }]),
     MailModule,

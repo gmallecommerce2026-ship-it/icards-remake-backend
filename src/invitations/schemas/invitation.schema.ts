@@ -1,60 +1,93 @@
-import { Prop, Schema, SchemaFactory } from '@nestjs/mongoose';
-import { Types, type HydratedDocument } from 'mongoose';
+import { Column, Entity, Index } from 'typeorm';
+import { BaseEntity } from '../../common/entities/base.entity.js';
 
 export const EVENT_TYPES = ['wedding', 'birthday', 'baby', 'event'] as const;
 export type EventType = (typeof EVENT_TYPES)[number];
 
-@Schema({ _id: false })
-export class InvitationSettings {
-  @Prop({ default: true }) allowRsvp: boolean;
-  @Prop({ default: true }) allowWishes: boolean;
+export interface InvitationSettings {
+  allowRsvp: boolean;
+  allowWishes: boolean;
   /** true: lời chúc phải được chủ thiệp duyệt mới hiện công khai */
-  @Prop({ default: false }) moderateWishes: boolean;
-  @Prop({ default: false }) showGuestList: boolean;
-  @Prop({ default: 5, min: 0, max: 20 }) maxCompanions: number;
-  @Prop({ type: Date }) rsvpDeadline?: Date;
+  moderateWishes: boolean;
+  showGuestList: boolean;
+  maxCompanions: number;
+  /** ISO string (lưu trong cột JSON) */
+  rsvpDeadline?: string | null;
 }
 
-export const InvitationSettingsSchema = SchemaFactory.createForClass(InvitationSettings);
+export const DEFAULT_SETTINGS: InvitationSettings = {
+  allowRsvp: true,
+  allowWishes: true,
+  moderateWishes: false,
+  showGuestList: false,
+  maxCompanions: 5,
+};
 
-@Schema({ _id: true })
-export class PlannerTask {
-  @Prop({ required: true, trim: true, maxlength: 200 }) title: string;
-  @Prop({ default: false }) done: boolean;
-  @Prop({ type: Date }) dueDate?: Date;
-  @Prop({ trim: true, maxlength: 60 }) category?: string;
-  @Prop({ trim: true, maxlength: 1000 }) note?: string;
+export interface PlannerTask {
+  _id: string;
+  title: string;
+  done: boolean;
+  /** ISO string */
+  dueDate?: string;
+  category?: string;
+  note?: string;
 }
-export const PlannerTaskSchema = SchemaFactory.createForClass(PlannerTask);
 
-// minimize:false -> giữ object rỗng ({}), tránh info/page/design bị Mongoose xoá mất khi rỗng
-@Schema({ timestamps: true, minimize: false })
-export class Invitation {
-  @Prop({ type: Types.ObjectId, ref: 'User', required: true, index: true }) owner: Types.ObjectId;
-  @Prop({ required: true, trim: true, maxlength: 200 }) title: string;
-  @Prop({ required: true, unique: true }) slug: string;
-  @Prop({ type: String, enum: EVENT_TYPES, default: 'wedding' }) eventType: EventType;
-  @Prop({ trim: true }) templateSlug?: string;
-  @Prop({ type: String, enum: ['draft', 'published'], default: 'draft', index: true }) status: 'draft' | 'published';
-  @Prop({ type: Date }) eventDate?: Date;
-  @Prop() cover?: string;
+@Entity('invitations')
+@Index(['owner', 'createdAt'])
+export class Invitation extends BaseEntity {
+  @Index()
+  @Column({ type: 'char', length: 24 })
+  owner: string;
+
+  @Column({ type: 'varchar', length: 200 })
+  title: string;
+
+  @Index({ unique: true })
+  @Column({ type: 'varchar', length: 100 })
+  slug: string;
+
+  @Column({ type: 'enum', enum: EVENT_TYPES, default: 'wedding' })
+  eventType: EventType;
+
+  @Column({ type: 'varchar', length: 100, nullable: true })
+  templateSlug?: string | null;
+
+  @Index()
+  @Column({ type: 'enum', enum: ['draft', 'published'], default: 'draft' })
+  status: 'draft' | 'published';
+
+  @Column({ type: 'datetime', nullable: true })
+  eventDate?: Date | null;
+
+  @Column({ type: 'varchar', length: 1000, nullable: true })
+  cover?: string | null;
 
   /** EventPageData.info của studio: { title, description, host, date, time, venue, address } */
-  @Prop({ type: Object, default: {} }) info: Record<string, unknown>;
+  @Column({ type: 'json' })
+  info: Record<string, unknown>;
+
   /** EventPageData còn lại: { styleId, accent, bg, blocks[] } */
-  @Prop({ type: Object, default: {} }) page: Record<string, unknown>;
+  @Column({ type: 'json' })
+  page: Record<string, unknown>;
+
   /** Thiết kế thiệp: { pages, backdrops, envelope:{color,liner,stampId,recipientName} } */
-  @Prop({ type: Object, default: {} }) design: Record<string, unknown>;
+  @Column({ type: 'json' })
+  design: Record<string, unknown>;
 
-  @Prop({ type: InvitationSettingsSchema, default: () => ({}) }) settings: InvitationSettings;
+  @Column({ type: 'json' })
+  settings: InvitationSettings;
+
   /** Ngân sách (PUT /budgetRequest): { total, items:[{name,estimate,actual,paid,note}] } */
-  @Prop({ type: Object, default: {} }) budget: Record<string, unknown>;
-  @Prop({ type: [PlannerTaskSchema], default: [] }) tasks: Types.DocumentArray<PlannerTask>;
+  @Column({ type: 'json' })
+  budget: Record<string, unknown>;
 
-  @Prop({ default: 0 }) views: number;
-  @Prop({ type: Date }) publishedAt?: Date;
+  @Column({ type: 'json' })
+  tasks: PlannerTask[];
+
+  @Column({ type: 'int', default: 0 })
+  views: number;
+
+  @Column({ type: 'datetime', nullable: true })
+  publishedAt?: Date | null;
 }
-
-export type InvitationDocument = HydratedDocument<Invitation>;
-export const InvitationSchema = SchemaFactory.createForClass(Invitation);
-InvitationSchema.index({ owner: 1, createdAt: -1 });
