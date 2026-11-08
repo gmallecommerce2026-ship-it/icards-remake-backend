@@ -14,9 +14,10 @@ import { FaqItem } from '../pages/schemas/faq-item.schema.js';
 import { SiteContent } from '../settings/schemas/site-content.schema.js';
 import { CATALOG_SEED } from './data/catalog.seed.js';
 import { SITE_CONFIG_SEED } from './data/site-config.seed.js';
+import { EXTRA_TEMPLATES, TEMPLATE_TREE_SEED } from './data/template-tree.seed.js';
 
 /** Tăng số này khi thêm dữ liệu seed mới. Lần khởi động sau sẽ bổ sung phần còn thiếu. */
-export const SEED_VERSION = 3;
+export const SEED_VERSION = 4;
 const STATE_KEY = 'seed.state';
 
 export interface SeedSummary {
@@ -77,7 +78,7 @@ export async function seedAll(m: EntityManager, { force = false, repair = false 
   inserted.templates = await insertMissing(
     m,
     InvitationTemplate,
-    d.templates.map((t) =>
+    [...d.templates, ...EXTRA_TEMPLATES].map((t) =>
       Object.assign(new InvitationTemplate(), {
         _id: stableId('template', t.slug),
         slug: t.slug,
@@ -202,6 +203,8 @@ export async function seedAll(m: EntityManager, { force = false, repair = false 
   // Cấu hình giao diện: thông báo, menu, banner, giới thiệu, khối dịp
   inserted['content:settings'] = await setContentMissing(m, 'settings', cfg.settings, force);
   inserted['content:template.blocks'] = await setContentMissing(m, 'template.blocks', cfg.templateBlocks, force);
+  // v4: cây danh mục mẫu thiệp nhiều cấp (menu + trang /templates). Không ghi đè nếu đã có.
+  inserted['content:templates.tree'] = await setContentMissing(m, 'templates.tree', TEMPLATE_TREE_SEED, force);
 
   // Migration v3: menu và khối dịp phiên bản 2 còn rỗng, nên thay bằng dữ liệu đầy đủ.
   // Chỉ ghi đè hai phần này, giữ nguyên theme, banner, introText. Dashboard chưa tồn tại nên chưa có chỉnh sửa nào bị mất.
