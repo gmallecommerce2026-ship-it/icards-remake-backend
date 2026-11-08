@@ -15,7 +15,6 @@ import { SiteContent } from '../settings/schemas/site-content.schema.js';
 import { CATALOG_SEED } from './data/catalog.seed.js';
 import { SITE_CONFIG_SEED } from './data/site-config.seed.js';
 import { EXTRA_TEMPLATES, TEMPLATE_TREE_SEED } from './data/template-tree.seed.js';
-import type { TemplateBlockConfig } from '../settings/site-config.types.js';
 
 /** Tăng số này khi thêm dữ liệu seed mới. Lần khởi động sau sẽ bổ sung phần còn thiếu. */
 export const SEED_VERSION = 7;
@@ -204,6 +203,10 @@ export async function seedAll(m: EntityManager, { force = false, repair = false 
   // Cấu hình giao diện: thông báo, menu, banner, giới thiệu, khối dịp
   inserted['content:settings'] = await setContentMissing(m, 'settings', cfg.settings, force);
   inserted['content:template.blocks'] = await setContentMissing(m, 'template.blocks', cfg.templateBlocks, force);
+  // v6: kiểu chữ tên mẫu thiệp (font theo danh mục / theo mẫu). Không ghi đè nếu đã có.
+  inserted['content:template.titleStyles'] = await setContentMissing(m, 'template.titleStyles', cfg.titleStyles, force);
+  // v7: phong bì mặc định theo mẫu. Chỉ thêm khi chưa có, không ghi đè cấu hình dashboard.
+  inserted['content:template.envelopes'] = await setContentMissing(m, 'template.envelopes', cfg.templateEnvelopes, force);
   // v4: cây danh mục mẫu thiệp nhiều cấp (menu + trang /templates). Không ghi đè nếu đã có.
   inserted['content:templates.tree'] = await setContentMissing(m, 'templates.tree', TEMPLATE_TREE_SEED, force);
 
@@ -225,23 +228,6 @@ export async function seedAll(m: EntityManager, { force = false, repair = false 
   if (seededVersion < 5 && !force) {
     await setContentMissing(m, 'templates.tree', TEMPLATE_TREE_SEED, true);
     inserted['migrate:v5'] = 1;
-  }
-
-  // Migration v7: font riêng cho TÊN danh mục nằm trong từng khối của 'template.blocks'.
-  // Chỉ thêm titleStyle vào khối chưa có, không ghi đè chỉnh sửa đã có. Xóa khóa 'template.titleStyles' cũ (kiểu chữ theo từng mẫu, nay bỏ).
-  if (seededVersion < 7 && !force) {
-    const blocksRepo = m.getRepository(SiteContent);
-    const blocksRow = await blocksRepo.findOne({ where: { key: 'template.blocks' } });
-    if (blocksRow && Array.isArray(blocksRow.value)) {
-      const seedBySlug = new Map(cfg.templateBlocks.map((b) => [b.slug, b]));
-      const value = (blocksRow.value as TemplateBlockConfig[]).map((b) => {
-        const seeded = seedBySlug.get(b.slug)?.titleStyle;
-        return b.titleStyle || !seeded ? b : { ...b, titleStyle: seeded };
-      });
-      await blocksRepo.save({ key: 'template.blocks', value });
-    }
-    await blocksRepo.delete({ key: 'template.titleStyles' });
-    inserted['migrate:v7'] = 1;
   }
 
   await setContentMissing(m, STATE_KEY, { version: SEED_VERSION, seededAt: new Date().toISOString() }, true);
