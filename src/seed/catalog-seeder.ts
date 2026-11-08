@@ -16,7 +16,7 @@ import { CATALOG_SEED } from './data/catalog.seed.js';
 import { SITE_CONFIG_SEED } from './data/site-config.seed.js';
 
 /** Tăng số này khi thêm dữ liệu seed mới. Lần khởi động sau sẽ bổ sung phần còn thiếu. */
-export const SEED_VERSION = 2;
+export const SEED_VERSION = 3;
 const STATE_KEY = 'seed.state';
 
 export interface SeedSummary {
@@ -202,6 +202,20 @@ export async function seedAll(m: EntityManager, { force = false }: { force?: boo
   // Cấu hình giao diện: thông báo, menu, banner, giới thiệu, khối dịp
   inserted['content:settings'] = await setContentMissing(m, 'settings', cfg.settings, force);
   inserted['content:template.blocks'] = await setContentMissing(m, 'template.blocks', cfg.templateBlocks, force);
+
+  // Migration v3: menu và khối dịp phiên bản 2 còn rỗng, nên thay bằng dữ liệu đầy đủ.
+  // Chỉ ghi đè hai phần này, giữ nguyên theme, banner, introText. Dashboard chưa tồn tại nên chưa có chỉnh sửa nào bị mất.
+  if (seededVersion < 3 && !force) {
+    const settingsRow = await m.getRepository(SiteContent).findOne({ where: { key: 'settings' } });
+    if (settingsRow) {
+      await m.getRepository(SiteContent).save({
+        key: 'settings',
+        value: { ...(settingsRow.value as object), headerNav: cfg.settings.headerNav },
+      });
+    }
+    await setContentMissing(m, 'template.blocks', cfg.templateBlocks, true);
+    inserted['migrate:v3'] = 1;
+  }
 
   await setContentMissing(m, STATE_KEY, { version: SEED_VERSION, seededAt: new Date().toISOString() }, true);
   return { skipped: false, version: SEED_VERSION, inserted };

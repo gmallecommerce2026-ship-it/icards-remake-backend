@@ -11,20 +11,36 @@ const settings: SiteSettings = {
     logoUrl: null,
     announcementBar: { isEnabled: false, text: '', isMarquee: false },
   },
-  // Mỗi danh mục thiệp là một mục menu. Phần con (children) để trống, dashboard sẽ điền sau.
+  // Menu 3 cấp: danh mục -> cột (cùng tên danh mục) -> các mẫu thiệp thuộc danh mục đó.
   headerNav: CATALOG_SEED.templateCategories.map((c, i) => ({
     id: c.id,
     title: c.label,
-    path: '/templates',
+    path: `/templates?category=${c.id}`,
     order: i + 1,
     isVisible: true,
-    children: [],
+    children: [
+      {
+        id: `${c.id}-col`,
+        title: c.label,
+        order: 1,
+        isVisible: true,
+        children: CATALOG_SEED.templates
+          .filter((t) => t.category === c.id)
+          .map((t, j) => ({ id: t.slug, title: t.name, path: `/templates/${t.slug}`, order: j + 1, isVisible: true, children: [] })),
+      },
+    ],
   })),
   banners: [{ id: 'home-hero', name: 'Banner chính', displayPage: 'home', isEnabled: true, imgSrc: HERO_IMAGE, link: '/templates' }],
   introText: '',
 };
 
-// Chưa có dữ liệu gốc cho khối "dịp". Thêm vào đây khi có, ví dụ { title, slug, isActive: true, templateSlugs: [...] }.
-const templateBlocks: TemplateBlockConfig[] = [];
+// Khối "dịp" trên trang chủ: mỗi danh mục một khối, lấy mẫu đầu tiên làm ảnh đại diện.
+// Chỉ đưa một mẫu mỗi khối để phần "Mẫu thiệp nổi bật" vẫn còn mẫu hiển thị.
+const templateBlocks: TemplateBlockConfig[] = CATALOG_SEED.templateCategories.map((c) => ({
+  title: c.label,
+  slug: c.id,
+  isActive: true,
+  templateSlugs: CATALOG_SEED.templates.filter((t) => t.category === c.id).slice(0, 1).map((t) => t.slug),
+}));
 
 export const SITE_CONFIG_SEED = { settings, templateBlocks };
