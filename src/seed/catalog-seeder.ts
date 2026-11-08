@@ -17,7 +17,7 @@ import { SITE_CONFIG_SEED } from './data/site-config.seed.js';
 import { EXTRA_TEMPLATES, TEMPLATE_TREE_SEED } from './data/template-tree.seed.js';
 
 /** Tăng số này khi thêm dữ liệu seed mới. Lần khởi động sau sẽ bổ sung phần còn thiếu. */
-export const SEED_VERSION = 4;
+export const SEED_VERSION = 6;
 const STATE_KEY = 'seed.state';
 
 export interface SeedSummary {
@@ -203,6 +203,8 @@ export async function seedAll(m: EntityManager, { force = false, repair = false 
   // Cấu hình giao diện: thông báo, menu, banner, giới thiệu, khối dịp
   inserted['content:settings'] = await setContentMissing(m, 'settings', cfg.settings, force);
   inserted['content:template.blocks'] = await setContentMissing(m, 'template.blocks', cfg.templateBlocks, force);
+  // v6: kiểu chữ tên mẫu thiệp (font theo danh mục / theo mẫu). Không ghi đè nếu đã có.
+  inserted['content:template.titleStyles'] = await setContentMissing(m, 'template.titleStyles', cfg.titleStyles, force);
   // v4: cây danh mục mẫu thiệp nhiều cấp (menu + trang /templates). Không ghi đè nếu đã có.
   inserted['content:templates.tree'] = await setContentMissing(m, 'templates.tree', TEMPLATE_TREE_SEED, force);
 
@@ -218,6 +220,12 @@ export async function seedAll(m: EntityManager, { force = false, repair = false 
     }
     await setContentMissing(m, 'template.blocks', cfg.templateBlocks, true);
     inserted['migrate:v3'] = 1;
+  }
+
+  // Migration v5: cây danh mục chuyển từ 2 sang 3 cấp (danh mục → nhóm → nhóm con → mẫu). Chỉ ghi đè khóa 'templates.tree'.
+  if (seededVersion < 5 && !force) {
+    await setContentMissing(m, 'templates.tree', TEMPLATE_TREE_SEED, true);
+    inserted['migrate:v5'] = 1;
   }
 
   await setContentMissing(m, STATE_KEY, { version: SEED_VERSION, seededAt: new Date().toISOString() }, true);

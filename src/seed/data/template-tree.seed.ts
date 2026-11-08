@@ -26,6 +26,11 @@ interface RootDef {
   groups: GroupDef[];
 }
 
+
+// Viết gọn: sub = nhóm con (cấp 3, chứa mẫu thiệp); grp = nhóm (cấp 2, chứa các nhóm con).
+const sub = (id: string, label: string, names: string[] = [], existing: string[] = []): GroupDef => ({ id, label, names, existing });
+const grp = (id: string, label: string, ...children: GroupDef[]): GroupDef => ({ id, label, children });
+
 const ROOTS: RootDef[] = [
   {
     id: 'wedding', label: 'Thiệp cưới', base: 'wedding', prefix: 'cuoi', kicker: 'Trân trọng kính mời',
@@ -34,16 +39,16 @@ const ROOTS: RootDef[] = [
     message: 'Sự hiện diện của bạn là niềm vui lớn nhất của chúng mình trong ngày trọng đại này.',
     features: ['Ảnh bìa và lời mời', 'Đếm ngược đến ngày cưới', 'Album ảnh', 'Bản đồ chỉ đường', 'Xác nhận tham dự', 'Sổ lưu bút'],
     groups: [
-      { id: 'wedding-classic', label: 'Cổ điển - Truyền thống', names: ['Cẩm Tú', 'Trầm Hương', 'Đài Các'] },
-      { id: 'wedding-modern', label: 'Hiện đại - Tối giản', existing: ['som-mai'], names: ['Ánh Dương', 'Mộc Lam'] },
-      { id: 'wedding-romantic', label: 'Lãng mạn - Hoa', existing: ['nu-hong'], names: ['Thủy Tiên', 'Vườn Xuân'] },
-      {
-        id: 'wedding-outdoor', label: 'Cưới ngoài trời',
-        children: [
-          { id: 'wedding-beach', label: 'Cưới biển', existing: ['gio-bien'], names: ['Hoàng Hôn Biển'] },
-          { id: 'wedding-forest', label: 'Cưới rừng - đồng cỏ', existing: ['rung-thong'], names: ['Đồng Cỏ'] },
-        ],
-      },
+      grp('wedding-style', 'Phong cách',
+        sub('wedding-classic', 'Cổ điển', ['Cẩm Tú', 'Trầm Hương']),
+        sub('wedding-vn', 'Truyền thống Việt', ['Đài Các', 'Áo Dài Đỏ']),
+        sub('wedding-modern', 'Hiện đại - Tối giản', ['Ánh Dương', 'Mộc Lam'], ['som-mai'])),
+      grp('wedding-flower', 'Hoa và lãng mạn',
+        sub('wedding-rose', 'Hoa hồng', ['Vườn Xuân'], ['nu-hong']),
+        sub('wedding-lavender', 'Hoa xanh - tím', ['Thủy Tiên', 'Oải Hương'])),
+      grp('wedding-outdoor', 'Cưới ngoài trời',
+        sub('wedding-beach', 'Cưới biển', ['Hoàng Hôn Biển'], ['gio-bien']),
+        sub('wedding-forest', 'Cưới rừng - đồng cỏ', ['Đồng Cỏ'], ['rung-thong'])),
     ],
   },
   {
@@ -53,9 +58,15 @@ const ROOTS: RootDef[] = [
     message: 'Gia đình chúng tôi trân trọng kính mời quý khách đến chung vui trong buổi lễ của hai con.',
     features: ['Ảnh bìa và lời mời', 'Bản đồ chỉ đường', 'Xác nhận tham dự', 'Sổ lưu bút'],
     groups: [
-      { id: 'engagement-anhoi', label: 'Lễ ăn hỏi', names: ['Trầu Cau', 'Sính Lễ', 'Đôi Ta'] },
-      { id: 'engagement-dinhhon', label: 'Lễ đính hôn', names: ['Nhẫn Đôi', 'Lời Hẹn'] },
-      { id: 'engagement-vuquy', label: 'Lễ vu quy', names: ['Hoa Vu Quy', 'Nhà Gái'] },
+      grp('engagement-anhoi', 'Lễ ăn hỏi',
+        sub('engagement-anhoi-trad', 'Ăn hỏi truyền thống', ['Trầu Cau', 'Sính Lễ']),
+        sub('engagement-anhoi-modern', 'Ăn hỏi hiện đại', ['Đôi Ta', 'Hộp Quà Cưới'])),
+      grp('engagement-dinhhon', 'Lễ đính hôn',
+        sub('engagement-ring', 'Đính hôn nhẫn cưới', ['Nhẫn Đôi', 'Lời Hẹn']),
+        sub('engagement-outdoor', 'Đính hôn ngoài trời', ['Chiều Vàng', 'Vườn Hẹn'])),
+      grp('engagement-vuquy', 'Lễ vu quy',
+        sub('engagement-vuquy-home', 'Vu quy tại nhà gái', ['Hoa Vu Quy', 'Nhà Gái']),
+        sub('engagement-vuquy-min', 'Vu quy tối giản', ['Đóa Trắng', 'Chiếc Khăn Voan'])),
     ],
   },
   {
@@ -65,9 +76,16 @@ const ROOTS: RootDef[] = [
     message: 'Hãy đến cùng chung vui, cười thật to và ăn thật nhiều bánh kem nhé!',
     features: ['Ảnh bìa và lời mời', 'Bản đồ chỉ đường', 'Xác nhận tham dự', 'Danh sách quà gợi ý'],
     groups: [
-      { id: 'birthday-kids', label: 'Sinh nhật bé', existing: ['be-cuoi'], names: ['Sắc Màu', 'Vũ Trụ Nhỏ'] },
-      { id: 'birthday-adult', label: 'Sinh nhật người lớn', existing: ['tiec-dem'], names: ['Rượu Vang', 'Tuổi Ba Mươi'] },
-      { id: 'birthday-theme', label: 'Tiệc theo chủ đề', names: ['Bãi Biển', 'Hóa Trang', 'Thập Niên 90'] },
+      grp('birthday-kids', 'Sinh nhật bé',
+        sub('birthday-boy', 'Bé trai', ['Vũ Trụ Nhỏ', 'Siêu Nhân Nhí']),
+        sub('birthday-girl', 'Bé gái', ['Sắc Màu', 'Công Chúa Nhỏ']),
+        sub('birthday-allkids', 'Cho mọi bé', ['Bóng Bay'], ['be-cuoi'])),
+      grp('birthday-adult', 'Sinh nhật người lớn',
+        sub('birthday-fancy', 'Tiệc sang trọng', ['Rượu Vang'], ['tiec-dem']),
+        sub('birthday-milestone', 'Tuổi tròn', ['Tuổi Ba Mươi', 'Tuổi Bốn Mươi'])),
+      grp('birthday-theme', 'Tiệc theo chủ đề',
+        sub('birthday-outdoor', 'Ngoài trời', ['Bãi Biển', 'Cắm Trại']),
+        sub('birthday-retro', 'Hóa trang - Retro', ['Hóa Trang', 'Thập Niên 90'])),
     ],
   },
   {
@@ -77,8 +95,13 @@ const ROOTS: RootDef[] = [
     message: 'Ba mẹ và gia đình mời bạn đến dự bữa cơm thân mật mừng bé yêu.',
     features: ['Ảnh bìa và lời mời', 'Album ảnh bé', 'Bản đồ chỉ đường', 'Xác nhận tham dự'],
     groups: [
-      { id: 'baby-month', label: 'Đầy tháng', existing: ['mam-nho'], names: ['Nụ Cười', 'Bé Yêu'] },
-      { id: 'baby-year', label: 'Thôi nôi', names: ['Bé Lên Một', 'Trăng Tròn', 'Chuyến Bay Đầu'] },
+      grp('baby-month', 'Đầy tháng',
+        sub('baby-month-boy', 'Bé trai', ['Chú Gấu', 'Nụ Cười']),
+        sub('baby-month-girl', 'Bé gái', ['Bé Yêu', 'Nàng Thỏ']),
+        sub('baby-month-min', 'Tối giản', ['Mầm Xanh'], ['mam-nho'])),
+      grp('baby-year', 'Thôi nôi',
+        sub('baby-year-pick', 'Chọn đồ thôi nôi', ['Bé Lên Một', 'Bàn Chọn Đồ']),
+        sub('baby-year-theme', 'Chủ đề thôi nôi', ['Trăng Tròn', 'Chuyến Bay Đầu'])),
     ],
   },
   {
@@ -88,9 +111,15 @@ const ROOTS: RootDef[] = [
     message: 'Rất mong được đón tiếp bạn. Vui lòng xác nhận tham dự để chúng tôi chuẩn bị chu đáo.',
     features: ['Ảnh bìa và lời mời', 'Bản đồ chỉ đường', 'Xác nhận tham dự', 'Danh sách người tham dự'],
     groups: [
-      { id: 'event-reunion', label: 'Họp lớp - Họp mặt', existing: ['hop-lop'], names: ['Bạn Cũ', 'Tình Đồng Môn'] },
-      { id: 'event-corporate', label: 'Hội nghị - Doanh nghiệp', names: ['Khai Mạc', 'Đối Tác', 'Hội Thảo'] },
-      { id: 'event-party', label: 'Tiệc - Giao lưu', names: ['Đêm Giao Lưu', 'Tiệc Trà'] },
+      grp('event-reunion', 'Họp lớp - Họp mặt',
+        sub('event-class', 'Họp lớp', ['Bạn Cũ'], ['hop-lop']),
+        sub('event-family', 'Họp mặt đồng nghiệp, gia đình', ['Tình Đồng Môn', 'Sum Họp'])),
+      grp('event-corporate', 'Hội nghị - Doanh nghiệp',
+        sub('event-conference', 'Hội nghị - Hội thảo', ['Khai Mạc', 'Hội Thảo']),
+        sub('event-client', 'Đối tác - Khách hàng', ['Đối Tác', 'Tri Ân Khách Hàng'])),
+      grp('event-party', 'Tiệc - Giao lưu',
+        sub('event-networking', 'Giao lưu', ['Đêm Giao Lưu', 'Kết Nối']),
+        sub('event-tea', 'Tiệc trà', ['Tiệc Trà', 'Trà Chiều'])),
     ],
   },
   {
@@ -100,8 +129,12 @@ const ROOTS: RootDef[] = [
     message: 'Kính mời quý khách đến dự lễ khai trương và nhận quà tặng đặc biệt trong ngày đầu.',
     features: ['Ảnh bìa và lời mời', 'Bản đồ chỉ đường', 'Xác nhận tham dự'],
     groups: [
-      { id: 'opening-shop', label: 'Cửa hàng - Quán', names: ['Mở Cửa', 'Chào Hè', 'Nắng Mới'] },
-      { id: 'opening-office', label: 'Văn phòng - Công ty', names: ['Cột Mốc', 'Khởi Đầu'] },
+      grp('opening-shop', 'Cửa hàng - Quán',
+        sub('opening-cafe', 'Cà phê - Nhà hàng', ['Nắng Mới', 'Hương Cà Phê']),
+        sub('opening-retail', 'Cửa hàng bán lẻ', ['Mở Cửa', 'Chào Hè'])),
+      grp('opening-office', 'Văn phòng - Công ty',
+        sub('opening-company', 'Công ty mới', ['Khởi Đầu', 'Hướng Mới']),
+        sub('opening-branch', 'Chi nhánh - Văn phòng', ['Cột Mốc', 'Mở Rộng'])),
     ],
   },
   {
@@ -111,8 +144,13 @@ const ROOTS: RootDef[] = [
     message: 'Gia đình trân trọng kính mời bạn đến chung vui trong ngày nhập trạch.',
     features: ['Ảnh bìa và lời mời', 'Bản đồ chỉ đường', 'Xác nhận tham dự'],
     groups: [
-      { id: 'housewarming-new', label: 'Nhà mới', names: ['Mái Ấm', 'Cửa Sổ Xanh', 'Ngày Dọn Nhà'] },
-      { id: 'housewarming-ritual', label: 'Lễ nhập trạch', names: ['Nhập Trạch', 'An Cư'] },
+      grp('housewarming-new', 'Nhà mới',
+        sub('housewarming-house', 'Nhà phố', ['Mái Ấm', 'Phố Nhỏ']),
+        sub('housewarming-apt', 'Căn hộ', ['Cửa Sổ Xanh', 'Tầng Cao']),
+        sub('housewarming-move', 'Dọn nhà', ['Ngày Dọn Nhà', 'Chìa Khóa Mới'])),
+      grp('housewarming-ritual', 'Lễ nhập trạch',
+        sub('housewarming-rite', 'Cúng nhập trạch', ['Nhập Trạch', 'An Cư']),
+        sub('housewarming-party', 'Tiệc mừng nhà mới', ['Tiệc Sân Vườn', 'Bữa Cơm Đầu'])),
     ],
   },
   {
@@ -122,8 +160,12 @@ const ROOTS: RootDef[] = [
     message: 'Hãy đến chia vui cùng mình trong ngày khép lại một chặng đường và mở ra chặng mới.',
     features: ['Ảnh bìa và lời mời', 'Album ảnh', 'Bản đồ chỉ đường', 'Xác nhận tham dự'],
     groups: [
-      { id: 'graduation-uni', label: 'Tốt nghiệp đại học', names: ['Mũ Cử Nhân', 'Khởi Hành'] },
-      { id: 'graduation-school', label: 'Tổng kết - Chia tay lớp', names: ['Lời Tạm Biệt', 'Ngày Hè'] },
+      grp('graduation-uni', 'Tốt nghiệp đại học',
+        sub('graduation-bachelor', 'Cử nhân - Kỹ sư', ['Mũ Cử Nhân', 'Khởi Hành']),
+        sub('graduation-master', 'Thạc sĩ - Tiến sĩ', ['Học Vị', 'Chân Trời Mới'])),
+      grp('graduation-school', 'Tổng kết - Chia tay lớp',
+        sub('graduation-farewell', 'Chia tay lớp', ['Lời Tạm Biệt', 'Kỷ Yếu']),
+        sub('graduation-year', 'Tổng kết năm học', ['Ngày Hè', 'Điểm Mười'])),
     ],
   },
   {
@@ -133,8 +175,12 @@ const ROOTS: RootDef[] = [
     message: 'Mời bạn đến cùng gia đình ôn lại những kỷ niệm đẹp và chung vui.',
     features: ['Ảnh bìa và lời mời', 'Album ảnh', 'Bản đồ chỉ đường', 'Xác nhận tham dự'],
     groups: [
-      { id: 'anniversary-wedding', label: 'Kỷ niệm ngày cưới', names: ['Bạc Đầu', 'Mười Năm'] },
-      { id: 'anniversary-longevity', label: 'Mừng thọ', names: ['Phúc Thọ', 'Tùng Hạc'] },
+      grp('anniversary-wedding', 'Kỷ niệm ngày cưới',
+        sub('anniversary-gold', 'Cưới bạc - cưới vàng', ['Bạc Đầu', 'Vàng Son']),
+        sub('anniversary-year', 'Kỷ niệm tròn năm', ['Mười Năm', 'Năm Thứ Năm'])),
+      grp('anniversary-longevity', 'Mừng thọ',
+        sub('anniversary-70', 'Thọ 70 - 80 tuổi', ['Phúc Thọ', 'Bát Tuần']),
+        sub('anniversary-90', 'Thọ 90 - trăm tuổi', ['Tùng Hạc', 'Bách Niên'])),
     ],
   },
   {
@@ -144,8 +190,15 @@ const ROOTS: RootDef[] = [
     message: 'Cùng nhau đón một mùa lễ hội ấm áp và đầy ắp tiếng cười.',
     features: ['Ảnh bìa và lời mời', 'Bản đồ chỉ đường', 'Xác nhận tham dự'],
     groups: [
-      { id: 'festive-tet', label: 'Tất niên - Tân niên', names: ['Xuân Đoàn Viên', 'Tất Niên Ấm'] },
-      { id: 'festive-xmas', label: 'Giáng sinh - Năm mới', names: ['Đêm Bình An', 'Pháo Hoa'] },
+      grp('festive-tet', 'Tất niên - Tân niên',
+        sub('festive-tet-family', 'Tất niên gia đình', ['Xuân Đoàn Viên', 'Mâm Cỗ Cuối Năm']),
+        sub('festive-tet-company', 'Tất niên công ty', ['Tất Niên Ấm', 'Năm Mới Thịnh Vượng'])),
+      grp('festive-xmas', 'Giáng sinh - Năm mới',
+        sub('festive-xmas-eve', 'Giáng sinh', ['Đêm Bình An', 'Ông Già Tuyết']),
+        sub('festive-countdown', 'Countdown', ['Pháo Hoa', 'Giao Thừa Quốc Tế'])),
+      grp('festive-other', 'Lễ hội khác',
+        sub('festive-midautumn', 'Trung thu', ['Đêm Rằm', 'Lồng Đèn']),
+        sub('festive-halloween', 'Halloween', ['Đêm Ma Quái', 'Bí Ngô'])),
     ],
   },
 ];

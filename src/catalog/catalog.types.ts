@@ -77,3 +77,21 @@ export interface SlugCategoryItem {
 
 /** Khối nội dung bài viết (đúng kiểu Block của FE). */
 export type PostBlock = { t: 'h2' | 'p' | 'tip'; text: string } | { t: 'ul'; items: string[] };
+
+/**
+ * Font chữ tên mẫu thiệp. Dữ liệu chỉ lưu KHÓA (vd 'script'), FE đổi khóa thành font thật (src/lib/title-style.ts).
+ * Muốn thêm font: thêm khóa ở đây + ở FE + nạp font ở FE (scripts/build-local-fonts.mjs).
+ */
+export const TITLE_FONT_KEYS = ['sans', 'serif', 'script', 'display', 'mono'] as const;
+export type TitleFontKey = (typeof TITLE_FONT_KEYS)[number];
+
+/** Kiểu chữ của tên mẫu thiệp trên thẻ. Mọi trường đều tùy chọn. */
+export interface TemplateTitleStyle {
+  font?: TitleFontKey;
+  weight?: number; // 100..900, bước 100
+  size?: number; // px, 12..40
+  color?: string; // #rgb | #rrggbb | #rrggbbaa
+  align?: 'left' | 'center' | 'right';
+  uppercase?: boolean;
+  letterSpacing?: number; // em, -0.05..0.3
+}

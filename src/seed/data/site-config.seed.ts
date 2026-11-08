@@ -1,6 +1,7 @@
 // Cấu hình giao diện gốc (viết tay). Khác catalog.seed.ts (sinh từ mock), file này là nguồn để sửa tay.
 // Sau khi nạp, dashboard có thể đổi các khóa 'settings' và 'template.blocks' trong site_content.
 import type { SiteSettings, TemplateBlockConfig } from '../../settings/site-config.types.js';
+import type { TemplateTitleStyle } from '../../catalog/catalog.types.js';
 import { CATALOG_SEED } from './catalog.seed.js';
 
 const HERO_IMAGE = 'https://pub-f720e3221ef5464a93d19bbdae2cfb86.r2.dev/herohome.png';
@@ -43,4 +44,14 @@ const templateBlocks: TemplateBlockConfig[] = CATALOG_SEED.templateCategories.ma
   templateSlugs: CATALOG_SEED.templates.filter((t) => t.category === c.id).slice(0, 1).map((t) => t.slug),
 }));
 
-export const SITE_CONFIG_SEED = { settings, templateBlocks };
+// Kiểu chữ tên mẫu thiệp trên thẻ "Mẫu thiệp nổi bật". Thứ tự ưu tiên: default < category:<enum> < <slug mẫu>.
+// Dashboard sau này ghi cùng định dạng này vào khóa 'template.titleStyles' để mỗi mẫu có font riêng.
+const titleStyles: Record<string, TemplateTitleStyle> = {
+  default: { font: 'sans', weight: 600, size: 18, color: '#ffffff', align: 'center' },
+  'category:wedding': { font: 'script', weight: 400, size: 30 },
+  'category:birthday': { font: 'display', weight: 700, size: 20, uppercase: true, letterSpacing: 0.04 },
+  'category:baby': { font: 'serif', weight: 600, size: 26 },
+  'category:event': { font: 'sans', weight: 600, size: 17, uppercase: true, letterSpacing: 0.06 },
+};
+
+export const SITE_CONFIG_SEED = { settings, templateBlocks, titleStyles };
