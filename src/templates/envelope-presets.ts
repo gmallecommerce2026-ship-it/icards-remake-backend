@@ -52,6 +52,9 @@ export function isLegacyPresets(raw: unknown): boolean {
   return env.every((id) => LEGACY_ENVELOPE_IDS.includes(id as string)) && lin.every((id) => LEGACY_LINER_IDS.includes(id as string));
 }
 
+import type { TemplateEnvelope } from './envelope.js';
+import { sanitizeEnvelope } from './envelope.js';
+
 const ID = /^[a-z0-9-]{1,40}$/;
 const HEX = /^#[0-9a-f]{6}$/i;
 const BG_FORBIDDEN = /[;{}<>"'\\]|url\(|expression|@import/i;
@@ -75,3 +78,59 @@ export function sanitizePresets(raw: unknown): EnvelopePresets {
   // Danh mục trống hoặc hỏng hoàn toàn thì dùng bộ seed để studio không bị rỗng
   return envelopes.length && liners.length ? { envelopes, liners } : ENVELOPE_PRESETS_SEED;
 }
+
+/** FNV-1a 32-bit: băm chuỗi thành số, dùng làm hạt giống cho bộ sinh số ngẫu nhiên. */
+function hashString(s: string): number {
+  let h = 0x811c9dc5;
+  for (let i = 0; i < s.length; i++) {
+    h ^= s.charCodeAt(i);
+    h = Math.imul(h, 0x01000193);
+  }
+  return h >>> 0;
+}
+
+/** mulberry32: bộ sinh số giả ngẫu nhiên, cho cùng dãy số với cùng hạt giống (kết quả seed ổn định). */
+function rngFor(seed: number): () => number {
+  let a = seed >>> 0;
+  return () => {
+    a = (a + 0x6d2b79f5) >>> 0;
+    let t = a;
+    t = Math.imul(t ^ (t >>> 15), t | 1);
+    t ^= t + Math.imul(t ^ (t >>> 7), t | 61);
+    return ((t ^ (t >>> 14)) >>> 0) / 4294967296;
+  };
+}
+
+/**
+ * Gán phong bì + lớp lót ngẫu nhiên cho các mẫu CHƯA có cấu hình trong `map` (khóa 'template.envelopes').
+ * - Mỗi mẫu một màu phong bì; ưu tiên màu chưa được mẫu nào khác dùng, hết màu thì mới lặp lại.
+ * - Lớp lót chọn ngẫu nhiên theo slug (cố định cho mỗi mẫu).
+ * - Mẫu đã có khóa riêng (kể cả do dashboard sửa) và khóa 'default' không bị đụng tới.
+ * Trả về số mẫu vừa được gán.
+ */
+export function assignMissingEnvelopes(
+  map: Record<string, unknown>,
+  slugs: string[],
+  presets: EnvelopePresets,
+): number {
+  const used = new Set<string>();
+  for (const [k, v] of Object.entries(map)) {
+    if (k === 'default') continue;
+    const e = sanitizeEnvelope(v);
+    if (e?.envId) used.add(e.envId);
+  }
+  let added = 0;
+  for (const slug of [...new Set(slugs)].sort()) {
+    if (map[slug] !== undefined) continue;
+    const rng = rngFor(hashString(slug));
+    const free = presets.envelopes.filter((e) => !used.has(e.id));
+    const pool = free.length ? free : presets.envelopes;
+    const env = pool[Math.floor(rng() * pool.length)];
+    const liner = presets.liners[Math.floor(rng() * presets.liners.length)];
+    map[slug] = { envId: env.id, linerId: liner.id };
+    used.add(env.id);
+    added++;
+  }
+  return added;
+}
+

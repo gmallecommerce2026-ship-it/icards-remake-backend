@@ -16,10 +16,10 @@ import { CATALOG_SEED } from './data/catalog.seed.js';
 import { SITE_CONFIG_SEED } from './data/site-config.seed.js';
 import { EXTRA_TEMPLATES, TEMPLATE_TREE_SEED } from './data/template-tree.seed.js';
 import type { TemplateBlockConfig } from '../settings/site-config.types.js';
-import { isLegacyPresets } from '../templates/envelope-presets.js';
+import { assignMissingEnvelopes, isLegacyPresets, sanitizePresets } from '../templates/envelope-presets.js';
 
 /** Tăng số này khi thêm dữ liệu seed mới. Lần khởi động sau sẽ bổ sung phần còn thiếu. */
-export const SEED_VERSION = 9;
+export const SEED_VERSION = 10;
 const STATE_KEY = 'seed.state';
 
 export interface SeedSummary {
@@ -258,6 +258,19 @@ export async function seedAll(m: EntityManager, { force = false, repair = false 
       await presetsRepo.save({ key: 'envelope.presets', value: cfg.envelopePresets });
       inserted['migrate:v9'] = 1;
     }
+  }
+
+  // v10: mỗi mẫu thiệp một phong bì + lớp lót ngẫu nhiên (cố định theo slug). Chỉ gán cho mẫu chưa có cấu hình.
+  {
+    const envRepo = m.getRepository(SiteContent);
+    const envRow = await envRepo.findOne({ where: { key: 'template.envelopes' } });
+    const presetsRow = await envRepo.findOne({ where: { key: 'envelope.presets' } });
+    const presets = sanitizePresets(presetsRow?.value ?? cfg.envelopePresets);
+    const map = { ...((envRow?.value as Record<string, unknown>) ?? {}) };
+    const slugs = (await m.getRepository(InvitationTemplate).find({ select: ['slug'] })).map((t) => t.slug);
+    const added = assignMissingEnvelopes(map, slugs, presets);
+    if (added) await envRepo.save({ key: 'template.envelopes', value: map });
+    inserted['envelopes:assigned'] = added;
   }
 
   await setContentMissing(m, STATE_KEY, { version: SEED_VERSION, seededAt: new Date().toISOString() }, true);
