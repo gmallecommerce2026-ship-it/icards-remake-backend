@@ -53,6 +53,17 @@ export class TemplatesService {
     return toTemplateDto(t);
   }
 
+  /** Mẫu đã đăng theo danh sách slug (dùng cho khối dịp trên trang chủ). */
+  async findPublishedBySlugs(slugs: string[]) {
+    if (!slugs.length) return [];
+    const rows = await this.repo
+      .createQueryBuilder('t')
+      .where('t.slug IN (:...slugs)', { slugs })
+      .andWhere('t.isPublished = :pub', { pub: true })
+      .getMany();
+    return rows.map(toTemplateDto);
+  }
+
   /** Tăng lượt dùng khi người dùng mở một mẫu. */
   async trackView(idOrSlug: string) {
     await this.repo

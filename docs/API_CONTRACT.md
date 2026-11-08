@@ -79,7 +79,7 @@ Guest: `{_id,name,email,phone,group:{_id,name,color}|null,status,companions,gift
 🌐 GET `/wishes/public/:idOrSlug` (chỉ đã duyệt) · 🌐 POST `/wishes/public/:idOrSlug` `{name, message, guestId?(token)}` (5 lần/phút) ·
 🔒 GET `/wishes/admin/:invitationId?page&limit` → `{items,total,pending,…}` · 🔒 PUT `/wishes/:wishId` `{isApproved?, message?}` · 🔒 DELETE `/wishes/:wishId`
 
-## Chưa làm (Phase 2): `/invitation-templates`, `/template-blocks`, `/fonts`, `/design-assets`, `/products`, `/pages`, `/public/*`, social login.
+## Chưa làm (Phase 2): `/fonts`, `/design-assets`, `/products`, `/pages`, `/public/*`, social login.
 
 ## Catalog công khai 🌐 (dữ liệu seed từ FE — `npm run seed`)
 Tất cả là GET, không cần đăng nhập, không bị rate-limit theo IP (trừ khi ghi chú khác). Chỉ trả bản ghi `isPublished = true`.
@@ -97,7 +97,8 @@ Tất cả là GET, không cần đăng nhập, không bị rate-limit theo IP (
 | GET | /pages | `isBlog` (true\|false), `category`, `limit` | `Post[]` không kèm `content` |
 | GET | /pages/faq | | `{groups: {slug,label}[], items: {id,group,q,a}[]}` |
 | GET | /pages/:slug | | `Post` đầy đủ kèm `content` (blocks) hoặc 404 |
-| GET | /public/settings | | cấu hình chung (hiện trả `{}` cho đến khi có dữ liệu) |
+| GET | /template-blocks | | `[{_id, title, slug, isActive, templates:[{_id, imgSrc}]}]` — khối "dịp" trên trang chủ, lấy từ `site_content` key `template.blocks` (chỉ mẫu đã đăng) |
+| GET | /public/settings | | cấu hình giao diện: `{theme:{companyName, logoUrl, announcementBar}, headerNav, banners, introText}`, lấy từ `site_content` key `settings` |
 | GET | /public/content/:key | | danh mục/cấu hình; key thuộc whitelist: `templates.categories`, `shop.categories`, `services.process`, `blog.categories`, `faq.groups`, `professional.process`, `professional.tiers`, `professional.portfolio` |
 
 Lưu ý: `_id` của mọi bản ghi seed là sha1(namespace:slug) nên ổn định giữa các lần seed.
