@@ -15,7 +15,6 @@ import { PagesModule } from './pages/pages.module.js';
 import { ProductsModule } from './products/products.module.js';
 import { ServicesModule } from './services/services.module.js';
 import { SettingsModule } from './settings/settings.module.js';
-import { SeedModule } from './seed/seed.module.js';
 import { AppController } from './app.controller.js';
 import { AppService } from './app.service.js';
 
@@ -51,7 +50,6 @@ import { AppService } from './app.service.js';
     ProductsModule,
     ServicesModule,
     SettingsModule,
-    SeedModule,
   ],
   controllers: [AppController],
   providers: [AppService, { provide: APP_GUARD, useClass: ThrottlerGuard }],
