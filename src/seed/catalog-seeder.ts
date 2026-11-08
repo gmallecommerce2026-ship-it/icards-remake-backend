@@ -63,10 +63,10 @@ async function setContentMissing(m: EntityManager, key: string, value: unknown, 
   return 1;
 }
 
-export async function seedAll(m: EntityManager, { force = false }: { force?: boolean } = {}): Promise<SeedSummary> {
+export async function seedAll(m: EntityManager, { force = false, repair = false }: { force?: boolean; repair?: boolean } = {}): Promise<SeedSummary> {
   const state = await m.getRepository(SiteContent).findOne({ where: { key: STATE_KEY } });
   const seededVersion = (state?.value as { version?: number } | undefined)?.version ?? 0;
-  if (!force && seededVersion >= SEED_VERSION) {
+  if (!force && !repair && seededVersion >= SEED_VERSION) {
     return { skipped: true, version: SEED_VERSION, inserted: {} };
   }
 

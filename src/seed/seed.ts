@@ -1,5 +1,6 @@
 // Nạp dữ liệu danh mục và giao diện vào DB.
 //   npm run seed                → nạp phần còn thiếu (bỏ qua nếu đã đúng phiên bản seed)
+//   npm run seed -- --repair    → bỏ qua marker, chỉ thêm bản ghi còn thiếu (không ghi đè, an toàn trên server thật)
 //   npm run seed -- --force     → ghi đè toàn bộ về dữ liệu gốc (MẤT mọi chỉnh sửa đã làm trên dashboard)
 // Cũng có thể bật SEED_ON_BOOT=true để tự nạp mỗi khi khởi động app.
 import 'reflect-metadata';
@@ -23,6 +24,7 @@ function required(name: string): string {
 
 async function main() {
   const force = process.argv.includes('--force');
+  const repair = process.argv.includes('--repair'); // bổ sung phần còn thiếu, bỏ qua marker phiên bản, KHÔNG ghi đè
   const ds = new DataSource({
     type: 'mysql',
     host: process.env.DB_HOST ?? '127.0.0.1',
@@ -38,8 +40,8 @@ async function main() {
   await ds.initialize();
   try {
     // Tạo bảng nếu chưa có. Khi production đã tắt DB_SYNCHRONIZE thì bỏ qua.
-    if (process.env.DB_SYNCHRONIZE !== 'false') await ds.synchronize();
-    const summary = await ds.transaction((m) => seedAll(m, { force }));
+    if (process.env.DB_SYNCHRONIZE === 'true') await ds.synchronize();
+    const summary = await ds.transaction((m) => seedAll(m, { force, repair }));
     console.log('Seed xong:', JSON.stringify(summary));
   } finally {
     await ds.destroy();

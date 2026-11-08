@@ -1,4 +1,5 @@
 import { Module } from '@nestjs/common';
+import { join } from 'node:path';
 import { ConfigModule, ConfigService } from '@nestjs/config';
 import { APP_GUARD } from '@nestjs/core';
 import { TypeOrmModule } from '@nestjs/typeorm';
@@ -21,7 +22,8 @@ import { AppService } from './app.service.js';
 
 @Module({
   imports: [
-    ConfigModule.forRoot({ isGlobal: true }),
+    // Đường dẫn tuyệt đối: đọc đúng .env dù pm2 chạy với cwd nào
+    ConfigModule.forRoot({ isGlobal: true, envFilePath: [join(import.meta.dirname, '..', '.env')] }),
     TypeOrmModule.forRootAsync({
       inject: [ConfigService],
       useFactory: (cfg: ConfigService) => ({
@@ -34,8 +36,8 @@ import { AppService } from './app.service.js';
         charset: 'utf8mb4',
         timezone: 'Z',
         autoLoadEntities: true,
-        // Bật khi tạo DB mới; khi đã có dữ liệu thật, đặt DB_SYNCHRONIZE=false
-        synchronize: cfg.get<string>('DB_SYNCHRONIZE') !== 'false',
+        // AN TOÀN: chỉ tự đồng bộ bảng khi DB_SYNCHRONIZE=true được đặt rõ ràng (chỉ dùng cho DB mới/dev)
+        synchronize: cfg.get<string>('DB_SYNCHRONIZE') === 'true',
       }),
     }),
     ThrottlerModule.forRoot([{ ttl: 60_000, limit: 100 }]),
