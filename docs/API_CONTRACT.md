@@ -97,7 +97,7 @@ Tất cả là GET, không cần đăng nhập, không bị rate-limit theo IP (
 | GET | /pages | `isBlog` (true\|false), `category`, `limit` | `Post[]` không kèm `content` |
 | GET | /pages/faq | | `{groups: {slug,label}[], items: {id,group,q,a}[]}` |
 | GET | /pages/:slug | | `Post` đầy đủ kèm `content` (blocks) hoặc 404 |
-| GET | /template-blocks | | `[{_id, title, slug, isActive, templates:[{_id, imgSrc}]}]` — khối "dịp" trên trang chủ, lấy từ `site_content` key `template.blocks` (chỉ mẫu đã đăng) |
+| GET | /template-blocks | | `[{_id, title, slug, isActive, titleStyle?, templates:[{_id, imgSrc}]}]` (`titleStyle` là kiểu chữ của TÊN danh mục, xem `docs/TEMPLATE_TITLE_STYLE.md`) — khối "dịp" trên trang chủ, lấy từ `site_content` key `template.blocks` (chỉ mẫu đã đăng) |
 | GET | /public/settings | | cấu hình giao diện: `{theme:{companyName, logoUrl, announcementBar}, headerNav, banners, introText}`, lấy từ `site_content` key `settings` |
 | GET | /public/content/:key | | danh mục/cấu hình; key thuộc whitelist: `templates.categories`, `shop.categories`, `services.process`, `blog.categories`, `faq.groups`, `professional.process`, `professional.tiers`, `professional.portfolio` |
 

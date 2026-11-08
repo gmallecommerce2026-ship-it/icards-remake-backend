@@ -85,7 +85,7 @@ export type PostBlock = { t: 'h2' | 'p' | 'tip'; text: string } | { t: 'ul'; ite
 export const TITLE_FONT_KEYS = ['sans', 'serif', 'script', 'display', 'mono'] as const;
 export type TitleFontKey = (typeof TITLE_FONT_KEYS)[number];
 
-/** Kiểu chữ của tên mẫu thiệp trên thẻ. Mọi trường đều tùy chọn. */
+/** Kiểu chữ của tên danh mục (khối dịp trên trang chủ). Mọi trường đều tùy chọn. */
 export interface TemplateTitleStyle {
   font?: TitleFontKey;
   weight?: number; // 100..900, bước 100

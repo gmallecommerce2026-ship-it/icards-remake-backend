@@ -1,3 +1,5 @@
+import type { TemplateTitleStyle } from '../catalog/catalog.types.js';
+
 // Kiểu cấu hình giao diện công khai (khóa 'settings' và 'template.blocks' trong site_content).
 // Dashboard sau này sẽ đọc/ghi đúng các kiểu này.
 
@@ -42,6 +44,8 @@ export interface TemplateBlockConfig {
   slug: string;
   isActive: boolean;
   templateSlugs: string[];
+  /** Font, cỡ, màu... của TÊN danh mục trên trang chủ. Bỏ trống thì FE dùng kiểu mặc định. */
+  titleStyle?: TemplateTitleStyle;
 }
 
 /**

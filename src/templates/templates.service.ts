@@ -3,47 +3,32 @@ import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
 import { escapeLike } from '../common/utils/object-id.js';
 import { InvitationTemplate } from './schemas/invitation-template.schema.js';
-import { SettingsService } from '../settings/settings.service.js';
 import type { TemplatesQueryDto } from './dto/templates-query.dto.js';
-import { resolveTitleStyle, type TitleStyleMap } from './title-style.js';
 
 /** Hình dạng trả về khớp kiểu InvitationTemplate của FE (src/lib/templates.ts). */
-export const toTemplateDto = (
-  t: InvitationTemplate,
-  styles: TitleStyleMap = {},
-) => {
-  const titleStyle = resolveTitleStyle(styles, t.slug, t.category);
-  return {
-    _id: t._id,
-    slug: t.slug,
-    name: t.name,
-    category: t.category,
-    tagline: t.tagline,
-    description: t.description,
-    price: t.price,
-    popularity: t.popularity,
-    createdAt: t.releasedOn,
-    features: t.features,
-    ...(t.previewImage ? { previewImage: t.previewImage } : {}),
-    motif: t.motif,
-    palette: t.palette,
-    sample: t.sample,
-    /** Kiểu chữ tên mẫu trên thẻ (font, cỡ, màu...). Không có thì FE dùng kiểu mặc định. */
-    ...(titleStyle ? { titleStyle } : {}),
-  };
-};
+export const toTemplateDto = (t: InvitationTemplate) => ({
+  _id: t._id,
+  slug: t.slug,
+  name: t.name,
+  category: t.category,
+  tagline: t.tagline,
+  description: t.description,
+  price: t.price,
+  popularity: t.popularity,
+  createdAt: t.releasedOn,
+  features: t.features,
+  ...(t.previewImage ? { previewImage: t.previewImage } : {}),
+  motif: t.motif,
+  palette: t.palette,
+  sample: t.sample,
+});
 
 @Injectable()
 export class TemplatesService {
   constructor(
     @InjectRepository(InvitationTemplate)
     private readonly repo: Repository<InvitationTemplate>,
-    private readonly settings: SettingsService,
   ) {}
-
-  private titleStyles() {
-    return this.settings.getContent<TitleStyleMap>('template.titleStyles', {});
-  }
 
   async list(q: TemplatesQueryDto) {
     const qb = this.repo
@@ -61,11 +46,8 @@ export class TemplatesService {
     else qb.orderBy('t.popularity', 'DESC');
     qb.addOrderBy('t.slug', 'ASC');
     if (q.limit) qb.take(q.limit);
-    const [rows, styles] = await Promise.all([
-      qb.getMany(),
-      this.titleStyles(),
-    ]);
-    return rows.map((t) => toTemplateDto(t, styles));
+    const rows = await qb.getMany();
+    return rows.map(toTemplateDto);
   }
 
   async findPublished(idOrSlug: string) {
@@ -76,7 +58,7 @@ export class TemplatesService {
       ],
     });
     if (!t) throw new NotFoundException('Không tìm thấy mẫu thiệp');
-    return toTemplateDto(t, await this.titleStyles());
+    return toTemplateDto(t);
   }
 
   /** Mẫu đã đăng theo danh sách slug (dùng cho khối dịp trên trang chủ). */
@@ -87,8 +69,7 @@ export class TemplatesService {
       .where('t.slug IN (:...slugs)', { slugs })
       .andWhere('t.isPublished = :pub', { pub: true })
       .getMany();
-    const styles = await this.titleStyles();
-    return rows.map((t) => toTemplateDto(t, styles));
+    return rows.map(toTemplateDto);
   }
 
   /** Tăng lượt dùng khi người dùng mở một mẫu. */
