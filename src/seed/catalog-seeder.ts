@@ -16,9 +16,10 @@ import { CATALOG_SEED } from './data/catalog.seed.js';
 import { SITE_CONFIG_SEED } from './data/site-config.seed.js';
 import { EXTRA_TEMPLATES, TEMPLATE_TREE_SEED } from './data/template-tree.seed.js';
 import type { TemplateBlockConfig } from '../settings/site-config.types.js';
+import { isLegacyPresets } from '../templates/envelope-presets.js';
 
 /** Tăng số này khi thêm dữ liệu seed mới. Lần khởi động sau sẽ bổ sung phần còn thiếu. */
-export const SEED_VERSION = 8;
+export const SEED_VERSION = 9;
 const STATE_KEY = 'seed.state';
 
 export interface SeedSummary {
@@ -247,6 +248,16 @@ export async function seedAll(m: EntityManager, { force = false, repair = false 
       await blocksRepo.save({ key: 'template.blocks', value });
     }
     inserted['migrate:v7'] = 1;
+  }
+
+  // Migration v9: danh mục phong bì đa dạng hơn. Chỉ thay khi dữ liệu còn là bộ seed cũ (dashboard chưa sửa).
+  if (seededVersion < 9 && !force) {
+    const presetsRepo = m.getRepository(SiteContent);
+    const presetsRow = await presetsRepo.findOne({ where: { key: 'envelope.presets' } });
+    if (!presetsRow || isLegacyPresets(presetsRow.value)) {
+      await presetsRepo.save({ key: 'envelope.presets', value: cfg.envelopePresets });
+      inserted['migrate:v9'] = 1;
+    }
   }
 
   await setContentMissing(m, STATE_KEY, { version: SEED_VERSION, seededAt: new Date().toISOString() }, true);

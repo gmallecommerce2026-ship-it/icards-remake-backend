@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { ENVELOPE_PRESETS_SEED, sanitizePresets } from './envelope-presets.js';
+import { ENVELOPE_PRESETS_SEED, isLegacyPresets, sanitizePresets } from './envelope-presets.js';
 
 describe('sanitizePresets', () => {
   it('giữ nguyên bộ seed', () => {
@@ -26,5 +26,14 @@ describe('sanitizePresets', () => {
   it('danh mục hỏng hoàn toàn thì trả về bộ seed', () => {
     expect(sanitizePresets('rác')).toEqual(ENVELOPE_PRESETS_SEED);
     expect(sanitizePresets({ envelopes: [], liners: [] })).toEqual(ENVELOPE_PRESETS_SEED);
+  });
+});
+
+describe('isLegacyPresets', () => {
+  it('nhận ra bộ seed cũ và bộ đã sửa', () => {
+    const legacy = { envelopes: [{ id: 'burgundy' }, { id: 'sage' }], liners: [{ id: 'ink' }] };
+    const custom = { envelopes: [{ id: 'my-brand' }], liners: [{ id: 'ink' }] };
+    expect(isLegacyPresets(legacy)).toBe(true);
+    expect(isLegacyPresets(custom)).toBe(false);
   });
 });
