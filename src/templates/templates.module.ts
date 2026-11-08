@@ -6,11 +6,12 @@ import { TemplateBlocksController } from './template-blocks.controller.js';
 import { TemplatesController } from './templates.controller.js';
 import { TemplatesService } from './templates.service.js';
 import { TemplateBlocksService } from './template-blocks.service.js';
+import { EnvelopePresetsController } from './envelope-presets.controller.js';
 import { InvitationTemplate } from './schemas/invitation-template.schema.js';
 
 @Module({
   imports: [TypeOrmModule.forFeature([InvitationTemplate]), SettingsModule],
-  controllers: [TemplatesController, TemplateBlocksController, TemplateCategoriesController],
+  controllers: [TemplatesController, TemplateBlocksController, TemplateCategoriesController, EnvelopePresetsController],
   providers: [TemplatesService, TemplateBlocksService],
   exports: [TemplatesService, TemplateBlocksService],
 })

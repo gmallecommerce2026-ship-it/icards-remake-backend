@@ -18,7 +18,7 @@ import { EXTRA_TEMPLATES, TEMPLATE_TREE_SEED } from './data/template-tree.seed.j
 import type { TemplateBlockConfig } from '../settings/site-config.types.js';
 
 /** Tăng số này khi thêm dữ liệu seed mới. Lần khởi động sau sẽ bổ sung phần còn thiếu. */
-export const SEED_VERSION = 7;
+export const SEED_VERSION = 8;
 const STATE_KEY = 'seed.state';
 
 export interface SeedSummary {
@@ -208,6 +208,8 @@ export async function seedAll(m: EntityManager, { force = false, repair = false 
   inserted['content:template.titleStyles'] = await setContentMissing(m, 'template.titleStyles', cfg.titleStyles, force);
   // v7: phong bì mặc định theo mẫu. Chỉ thêm khi chưa có, không ghi đè cấu hình dashboard.
   inserted['content:template.envelopes'] = await setContentMissing(m, 'template.envelopes', cfg.templateEnvelopes, force);
+  // v8: danh mục phong bì + lớp lót (hoạ tiết). Chỉ thêm khi chưa có, không ghi đè dữ liệu dashboard.
+  inserted['content:envelope.presets'] = await setContentMissing(m, 'envelope.presets', cfg.envelopePresets, force);
   // v4: cây danh mục mẫu thiệp nhiều cấp (menu + trang /templates). Không ghi đè nếu đã có.
   inserted['content:templates.tree'] = await setContentMissing(m, 'templates.tree', TEMPLATE_TREE_SEED, force);
 

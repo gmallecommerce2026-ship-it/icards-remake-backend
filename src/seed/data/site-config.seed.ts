@@ -3,6 +3,7 @@
 import type { SiteSettings, TemplateBlockConfig } from '../../settings/site-config.types.js';
 import type { TemplateTitleStyle } from '../../catalog/catalog.types.js';
 import { CATALOG_SEED } from './catalog.seed.js';
+import { ENVELOPE_PRESETS_SEED } from '../../templates/envelope-presets.js';
 
 const HERO_IMAGE = 'https://pub-f720e3221ef5464a93d19bbdae2cfb86.r2.dev/herohome.png';
 
@@ -71,4 +72,4 @@ const templateEnvelopes: Record<string, { envId?: string; linerId?: string }> = 
   default: { envId: 'burgundy', linerId: 'ink' },
 };
 
-export const SITE_CONFIG_SEED = { settings, templateBlocks, titleStyles, templateEnvelopes };
+export const SITE_CONFIG_SEED = { settings, templateBlocks, titleStyles, templateEnvelopes, envelopePresets: ENVELOPE_PRESETS_SEED };
