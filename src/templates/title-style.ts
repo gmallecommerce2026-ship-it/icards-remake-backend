@@ -1,11 +1,13 @@
 import { TITLE_FONT_KEYS, type TemplateTitleStyle, type TitleFontKey } from '../catalog/catalog.types.js';
 
+/** Cấu hình kiểu chữ lưu ở site_content, khóa 'template.titleStyles'. */
+export type TitleStyleMap = Record<string, unknown>;
+
 const num = (v: unknown, min: number, max: number) => (typeof v === 'number' && Number.isFinite(v) && v >= min && v <= max ? v : undefined);
 
 /**
  * Chỉ giữ lại giá trị hợp lệ (font nằm trong danh sách cho phép, màu đúng dạng hex, số trong khoảng).
  * Dùng khi đọc để FE không bao giờ nhận CSS tùy ý, và dùng lại khi dashboard ghi.
- * Áp dụng cho kiểu chữ tên danh mục (khối "dịp" trên trang chủ), lưu trong khóa 'template.blocks'.
  */
 export function sanitizeTitleStyle(raw: unknown): TemplateTitleStyle | undefined {
   if (!raw || typeof raw !== 'object') return undefined;
@@ -22,4 +24,14 @@ export function sanitizeTitleStyle(raw: unknown): TemplateTitleStyle | undefined
   const ls = num(r.letterSpacing, -0.05, 0.3);
   if (ls !== undefined) out.letterSpacing = ls;
   return Object.keys(out).length ? out : undefined;
+}
+
+/**
+ * Kiểu chữ của một mẫu. Thứ tự ưu tiên (mục sau đè mục trước, theo từng trường):
+ *   'default' → 'category:<enum category>' → '<slug>'
+ */
+export function resolveTitleStyle(map: TitleStyleMap, slug: string, category: string): TemplateTitleStyle | undefined {
+  const pick = (k: string) => (map[k] && typeof map[k] === 'object' ? (sanitizeTitleStyle(map[k]) ?? {}) : {});
+  const merged = { ...pick('default'), ...pick(`category:${category}`), ...pick(slug) };
+  return Object.keys(merged).length ? merged : undefined;
 }
