@@ -86,7 +86,7 @@ Tất cả là GET, không cần đăng nhập, không bị rate-limit theo IP (
 
 | Method | Path | Query | Trả về |
 |---|---|---|---|
-| GET | /invitation-templates | `category`, `search`, `sort` (popular\|newest\|price-asc), `limit` (1-50) | `InvitationTemplate[]` (shape khớp `src/lib/templates.ts`; `createdAt` = ngày phát hành) |
+| GET | /invitation-templates | `category`, `format` (folding\|card), `orientation` (landscape\|square\|portrait), `search`, `sort` (popular\|newest\|price-asc), `limit` (1-50) | `InvitationTemplate[]` (shape khớp `src/lib/templates.ts`; `createdAt` = ngày phát hành; `format` mặc định folding, `orientation` mặc định portrait; mẫu `format=card` có thêm `layout: {front[], back[]}` với toạ độ theo tỉ lệ 0..1) |
 | GET | /invitation-templates/:idOrSlug | | `InvitationTemplate` hoặc 404 |
 | POST | /invitation-templates/:idOrSlug/view | | `{ok}` — tăng `popularity` (30 lần/phút) |
 | GET | /products | `category` (print\|onsite\|digital), `search`, `limit` | `Product[]` (shape khớp `src/lib/shop.ts`) |

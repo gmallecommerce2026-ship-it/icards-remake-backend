@@ -1,9 +1,10 @@
 // Cây danh mục mẫu thiệp nhiều cấp + các mẫu bổ sung (sinh bằng hàm, không viết tay từng mẫu).
 // Mẫu gốc (8 mẫu trong catalog.seed.ts) được xếp vào cây qua `existing`. Chỉ THÊM, không sửa mẫu cũ.
 // Cột `category` của bảng là enum 4 giá trị, nên mỗi danh mục gốc ánh xạ về một trong 4 giá trị đó (`base`).
-import type { TemplateCategory, TemplateMotif } from '../../catalog/catalog.types.js';
+import type { TemplateCategory, TemplateMotif, TemplateOrientation } from '../../catalog/catalog.types.js';
 import type { TemplateSeed } from '../catalog.seed-types.js';
 import type { TemplateTreeNode } from '../../settings/site-config.types.js';
+import { buildCardLayout } from './card-layouts.seed.js';
 
 interface GroupDef {
   id: string;
@@ -11,6 +12,8 @@ interface GroupDef {
   existing?: string[]; // slug mẫu đã có sẵn
   names?: string[]; // tên các mẫu mới
   children?: GroupDef[]; // nhóm con (cấp sâu hơn)
+  /** Nhóm thiệp 2 mặt: mọi mẫu mới trong nhóm có format 'card' và kiểu dáng này. */
+  orientation?: TemplateOrientation;
 }
 interface RootDef {
   id: string;
@@ -30,6 +33,9 @@ interface RootDef {
 // Viết gọn: sub = nhóm con (cấp 3, chứa mẫu thiệp); grp = nhóm (cấp 2, chứa các nhóm con).
 const sub = (id: string, label: string, names: string[] = [], existing: string[] = []): GroupDef => ({ id, label, names, existing });
 const grp = (id: string, label: string, ...children: GroupDef[]): GroupDef => ({ id, label, children });
+/** Nhóm thiệp 2 mặt theo một kiểu dáng (ngang / vuông / dọc). */
+const cardSub = (id: string, label: string, orientation: TemplateOrientation, names: string[]): GroupDef =>
+  ({ id, label, names, existing: [], orientation });
 
 const ROOTS: RootDef[] = [
   {
@@ -120,6 +126,10 @@ const ROOTS: RootDef[] = [
       grp('event-party', 'Tiệc - Giao lưu',
         sub('event-networking', 'Giao lưu', ['Đêm Giao Lưu', 'Kết Nối']),
         sub('event-tea', 'Tiệc trà', ['Tiệc Trà', 'Trà Chiều'])),
+      grp('event-card', 'Thiệp 2 mặt',
+        cardSub('event-card-landscape', 'Khổ ngang', 'landscape', ['Ngang Tri Ân', 'Ngang Khai Mạc', 'Ngang Gặp Mặt', 'Ngang Đêm Gala']),
+        cardSub('event-card-square', 'Khổ vuông', 'square', ['Vuông Đoàn Tụ', 'Vuông Tiệc Cuối Năm', 'Vuông Đối Tác', 'Vuông Họp Lớp']),
+        cardSub('event-card-portrait', 'Khổ dọc', 'portrait', ['Dọc Thiệp Mời', 'Dọc Hội Thảo', 'Dọc Gala Dinner', 'Dọc Tiệc Trà Chiều'])),
     ],
   },
   {
@@ -213,6 +223,13 @@ const PALETTES: [string, string, string, string][] = [
 ];
 const MOTIFS: TemplateMotif[] = ['arch', 'circle', 'frame', 'stripe'];
 
+const ORIENTATION_LABEL: Record<TemplateOrientation, string> = {
+  landscape: 'ngang',
+  square: 'vuông',
+  portrait: 'dọc',
+};
+const CARD_FEATURES = ['Thiệp 2 mặt (trước và sau)', 'Bản đồ chỉ đường', 'Xác nhận tham dự'];
+
 const slugify = (s: string) =>
   s.toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g, '').replace(/đ/g, 'd').replace(/[^a-z0-9]+/g, '-').replace(/^-|-$/g, '');
 
@@ -226,27 +243,39 @@ function build(root: RootDef, g: GroupDef): TemplateTreeNode {
     const [bg, ink, accent, soft] = PALETTES[i % PALETTES.length];
     const day = String(1 + (i % 28)).padStart(2, '0');
     const slug = `${root.prefix}-${slugify(name)}`;
+    const sample = {
+      kicker: root.kicker,
+      titleLines: root.titles[i % root.titles.length],
+      date: 'Chủ nhật, 20.12.2026',
+      time: '10:00',
+      place: root.place,
+      address: root.address,
+      message: root.message,
+    };
+    // Nhóm thiệp 2 mặt: kiểu card, kích thước theo khổ, bố cục hai mặt riêng
+    const card = g.orientation
+      ? {
+          format: 'card' as const,
+          orientation: g.orientation,
+          layout: buildCardLayout(g.orientation, i, { title: sample.titleLines.join(' '), sample }),
+        }
+      : {};
     extra.push({
       slug,
       name,
       category: root.base,
       tagline: `${g.label}, ${root.label.toLowerCase()}`,
-      description: `Mẫu ${root.label.toLowerCase()} thuộc nhóm ${g.label.toLowerCase()}. Bố cục gọn, đọc tốt trên điện thoại. Thay chữ, màu và ảnh theo ý bạn rồi gửi link cho khách mời.`,
+      description: g.orientation
+        ? `Thiệp hai mặt khổ ${ORIENTATION_LABEL[g.orientation]}: mặt trước ghi tiêu đề và thời gian, mặt sau ghi lời mời và địa điểm. Thay chữ, màu và ảnh theo ý bạn rồi gửi link cho khách mời.`
+        : `Mẫu ${root.label.toLowerCase()} thuộc nhóm ${g.label.toLowerCase()}. Bố cục gọn, đọc tốt trên điện thoại. Thay chữ, màu và ảnh theo ý bạn rồi gửi link cho khách mời.`,
       price: i % 3 === 0 ? 0 : i % 3 === 1 ? 49000 : 79000,
       popularity: 3800 - i * 41,
       createdAt: `2026-${String(1 + (i % 10)).padStart(2, '0')}-${day}`,
-      features: root.features,
+      features: g.orientation ? CARD_FEATURES : root.features,
       motif: MOTIFS[i % MOTIFS.length],
       palette: { bg, ink, accent, soft },
-      sample: {
-        kicker: root.kicker,
-        titleLines: root.titles[i % root.titles.length],
-        date: 'Chủ nhật, 20.12.2026',
-        time: '10:00',
-        place: root.place,
-        address: root.address,
-        message: root.message,
-      },
+      sample,
+      ...card,
     });
     slugs.push(slug);
   }

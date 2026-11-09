@@ -7,6 +7,55 @@ export type TemplateCategory = (typeof TEMPLATE_CATEGORIES)[number];
 export const TEMPLATE_MOTIFS = ['arch', 'circle', 'frame', 'stripe'] as const;
 export type TemplateMotif = (typeof TEMPLATE_MOTIFS)[number];
 
+/**
+ * Kiểu thiệp của mẫu.
+ *  - folding: thiệp gập 5:7 (bìa, ruột trái/phải, mặt sau) như trình chỉnh sửa hiện có.
+ *  - card: thiệp 2 mặt phẳng (mặt trước + mặt sau), kích thước theo `orientation`.
+ */
+export const TEMPLATE_FORMATS = ['folding', 'card'] as const;
+export type TemplateFormat = (typeof TEMPLATE_FORMATS)[number];
+
+/** Kiểu dáng khung: ngang (rộng > cao), vuông, dọc (cao > rộng). */
+export const TEMPLATE_ORIENTATIONS = ['landscape', 'square', 'portrait'] as const;
+export type TemplateOrientation = (typeof TEMPLATE_ORIENTATIONS)[number];
+
+/** Kích thước thiết kế (đơn vị px) của từng kiểu dáng. Dùng chung để FE và seed khớp nhau. */
+export const TEMPLATE_CARD_SIZES: Record<TemplateOrientation, { w: number; h: number }> = {
+  landscape: { w: 700, h: 500 },
+  square: { w: 600, h: 600 },
+  portrait: { w: 500, h: 700 },
+};
+
+/** Một phần tử trên một mặt thiệp. Toạ độ và kích thước là TỈ LỆ 0..1 so với chiều rộng (x, w, sz) hoặc chiều cao (y, h) của thiệp. */
+export interface TemplateFaceElement {
+  kind: 'text' | 'shape';
+  x: number;
+  y: number;
+  w: number;
+  h: number;
+  /** text: nội dung. */
+  text?: string;
+  /** text: cỡ chữ, tỉ lệ theo chiều rộng thiệp (vd 0.06 = 6%). */
+  sz?: number;
+  /** text: khóa phông (display = tiêu đề, body = nội dung, script = chữ viết tay). */
+  font?: 'display' | 'body' | 'script';
+  bold?: boolean;
+  italic?: boolean;
+  align?: 'left' | 'center' | 'right';
+  /** Vai trò màu lấy từ palette của mẫu. */
+  color?: 'ink' | 'accent' | 'soft' | 'bg';
+  /** shape: hình dạng trang trí. */
+  shape?: 'arch' | 'circle' | 'rect' | 'frame' | 'line';
+  /** shape: màu nền/viền lấy từ palette. */
+  fill?: 'ink' | 'accent' | 'soft' | 'bg';
+}
+
+/** Bố cục hai mặt của thiệp kiểu card. */
+export interface TemplateCardLayout {
+  front: TemplateFaceElement[];
+  back: TemplateFaceElement[];
+}
+
 export const SHOP_CATEGORY_IDS = ['print', 'onsite', 'digital'] as const;
 export type ShopCategory = (typeof SHOP_CATEGORY_IDS)[number];
 

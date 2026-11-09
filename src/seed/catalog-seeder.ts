@@ -19,7 +19,7 @@ import type { TemplateBlockConfig } from '../settings/site-config.types.js';
 import { assignMissingEnvelopes, isLegacyPresets, sanitizePresets } from '../templates/envelope-presets.js';
 
 /** Tăng số này khi thêm dữ liệu seed mới. Lần khởi động sau sẽ bổ sung phần còn thiếu. */
-export const SEED_VERSION = 10;
+export const SEED_VERSION = 11;
 const STATE_KEY = 'seed.state';
 
 export interface SeedSummary {
@@ -96,6 +96,9 @@ export async function seedAll(m: EntityManager, { force = false, repair = false 
         motif: t.motif,
         palette: t.palette,
         sample: t.sample,
+        format: t.format ?? 'folding',
+        orientation: t.orientation ?? 'portrait',
+        layout: t.layout ?? null,
         isPublished: true,
       }),
     ),

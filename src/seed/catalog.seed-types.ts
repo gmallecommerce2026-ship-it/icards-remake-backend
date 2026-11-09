@@ -2,7 +2,8 @@
 // nên mọi giá trị khớp 1-1 với những gì FE đang hiển thị.
 import type {
   CategoryItem, LabeledValue, PostBlock, ProductVariant, ShippingKind, ShopCategory, SlugCategoryItem,
-  TemplateCategory, TemplateMotif, TemplatePalette, TemplateSample, ThumbKind, Tone,
+  TemplateCardLayout, TemplateCategory, TemplateFormat, TemplateMotif, TemplateOrientation, TemplatePalette,
+  TemplateSample, ThumbKind, Tone,
 } from '../catalog/catalog.types.js';
 
 export interface TemplateSeed {
@@ -19,6 +20,10 @@ export interface TemplateSeed {
   motif: TemplateMotif;
   palette: TemplatePalette;
   sample: TemplateSample;
+  /** Mặc định folding / portrait cho mẫu cũ. */
+  format?: TemplateFormat;
+  orientation?: TemplateOrientation;
+  layout?: TemplateCardLayout | null;
 }
 
 export interface ProductSeed {

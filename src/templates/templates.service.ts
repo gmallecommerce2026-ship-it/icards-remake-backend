@@ -31,6 +31,12 @@ export const toTemplateDto = (
     motif: t.motif,
     palette: t.palette,
     sample: t.sample,
+    /** folding (gập) hoặc card (2 mặt phẳng). Mẫu cũ không có trường này nên mặc định folding. */
+    format: t.format ?? 'folding',
+    /** landscape | square | portrait. */
+    orientation: t.orientation ?? 'portrait',
+    /** Bố cục hai mặt (chỉ với format = card). */
+    ...(t.format === 'card' && t.layout ? { layout: t.layout } : {}),
     /** Kiểu chữ tên mẫu trên thẻ (font, cỡ, màu...). Không có thì FE dùng kiểu mặc định. */
     ...(titleStyle ? { titleStyle } : {}),
     /** Phong bì mặc định khi mở studio với mẫu này (envId / linerId). Không có thì FE dùng mặc định chung. */
@@ -60,6 +66,8 @@ export class TemplatesService {
       .where('t.isPublished = :pub', { pub: true });
     if (q.category)
       qb.andWhere('t.category = :category', { category: q.category });
+    if (q.format) qb.andWhere('t.format = :format', { format: q.format });
+    if (q.orientation) qb.andWhere('t.orientation = :orientation', { orientation: q.orientation });
     if (q.search?.trim()) {
       qb.andWhere('(t.name LIKE :s OR t.tagline LIKE :s)', {
         s: `%${escapeLike(q.search.trim())}%`,
