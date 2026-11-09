@@ -15,7 +15,7 @@ import { SiteContent } from '../settings/schemas/site-content.schema.js';
 import { CATALOG_SEED } from './data/catalog.seed.js';
 import { SITE_CONFIG_SEED } from './data/site-config.seed.js';
 import { EXTRA_TEMPLATES, TEMPLATE_TREE_SEED } from './data/template-tree.seed.js';
-import type { TemplateBlockConfig } from '../settings/site-config.types.js';
+import type { TemplateBlockConfig, TemplateTreeNode } from '../settings/site-config.types.js';
 import { assignMissingEnvelopes, isLegacyPresets, sanitizePresets } from '../templates/envelope-presets.js';
 
 /** Tăng số này khi thêm dữ liệu seed mới. Lần khởi động sau sẽ bổ sung phần còn thiếu. */
@@ -53,6 +53,35 @@ async function insertMissing<E extends WithId>(
   if (missing.length) await repo.save(missing);
   return missing.length;
 }
+
+/**
+ * Gộp các nút còn thiếu từ `seed` vào `existing` theo id, không sửa nút đã có.
+ * Dùng cho migration: thêm nhóm mới mà không ghi đè chỉnh sửa trên dashboard. Trả về cây mới và số nút đã thêm.
+ */
+export function mergeMissingTreeNodes(
+  existing: TemplateTreeNode[],
+  seed: TemplateTreeNode[],
+): { tree: TemplateTreeNode[]; added: number } {
+  let added = 0;
+  const tree = existing.map((n) => ({ ...n }));
+  for (const sn of seed) {
+    const found = tree.find((n) => n.id === sn.id);
+    if (!found) {
+      tree.push(structuredClone(sn));
+      added += 1 + countNodes(sn.children ?? []);
+      continue;
+    }
+    if (sn.children?.length) {
+      const sub = mergeMissingTreeNodes(found.children ?? [], sn.children);
+      found.children = sub.tree;
+      added += sub.added;
+    }
+  }
+  return { tree, added };
+}
+
+const countNodes = (nodes: TemplateTreeNode[]): number =>
+  nodes.reduce((t, n) => t + 1 + countNodes(n.children ?? []), 0);
 
 /** Ghi một khóa site_content. Không ghi đè nếu đã có, trừ khi force. */
 async function setContentMissing(m: EntityManager, key: string, value: unknown, force: boolean): Promise<number> {
@@ -274,6 +303,18 @@ export async function seedAll(m: EntityManager, { force = false, repair = false 
     const added = assignMissingEnvelopes(map, slugs, presets);
     if (added) await envRepo.save({ key: 'template.envelopes', value: map });
     inserted['envelopes:assigned'] = added;
+  }
+
+  // Migration v11: thêm nhóm "Thiệp 2 mặt" vào cây danh mục đã có trong DB (khóa đã tồn tại nên bước nạp ở trên bỏ qua).
+  // Chỉ thêm nút còn thiếu, không đụng vào nút hiện có.
+  if (seededVersion < 11 && !force) {
+    const treeRepo = m.getRepository(SiteContent);
+    const treeRow = await treeRepo.findOne({ where: { key: 'templates.tree' } });
+    if (treeRow && Array.isArray(treeRow.value)) {
+      const merged = mergeMissingTreeNodes(treeRow.value as TemplateTreeNode[], TEMPLATE_TREE_SEED);
+      if (merged.added) await treeRepo.save({ key: 'templates.tree', value: merged.tree });
+      inserted['migrate:v11'] = merged.added;
+    }
   }
 
   await setContentMissing(m, STATE_KEY, { version: SEED_VERSION, seededAt: new Date().toISOString() }, true);
