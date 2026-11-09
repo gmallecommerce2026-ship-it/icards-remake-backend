@@ -19,7 +19,7 @@ import type { TemplateBlockConfig, TemplateTreeNode } from '../settings/site-con
 import { assignMissingEnvelopes, isLegacyPresets, sanitizePresets } from '../templates/envelope-presets.js';
 
 /** Tăng số này khi thêm dữ liệu seed mới. Lần khởi động sau sẽ bổ sung phần còn thiếu. */
-export const SEED_VERSION = 11;
+export const SEED_VERSION = 12;
 const STATE_KEY = 'seed.state';
 
 export interface SeedSummary {
@@ -305,15 +305,15 @@ export async function seedAll(m: EntityManager, { force = false, repair = false 
     inserted['envelopes:assigned'] = added;
   }
 
-  // Migration v11: thêm nhóm "Thiệp 2 mặt" vào cây danh mục đã có trong DB (khóa đã tồn tại nên bước nạp ở trên bỏ qua).
-  // Chỉ thêm nút còn thiếu, không đụng vào nút hiện có.
-  if (seededVersion < 11 && !force) {
+  // Migration v12: thêm nhóm "Thiệp 2 mặt" vào cây danh mục đã có trong DB (khóa đã tồn tại nên bước nạp ở trên bỏ qua).
+  // Chỉ thêm nút còn thiếu, không đụng vào nút hiện có. Phải là v12 vì DB đã ở v11 từ lần seed trước.
+  if (seededVersion < 12 && !force) {
     const treeRepo = m.getRepository(SiteContent);
     const treeRow = await treeRepo.findOne({ where: { key: 'templates.tree' } });
     if (treeRow && Array.isArray(treeRow.value)) {
       const merged = mergeMissingTreeNodes(treeRow.value as TemplateTreeNode[], TEMPLATE_TREE_SEED);
       if (merged.added) await treeRepo.save({ key: 'templates.tree', value: merged.tree });
-      inserted['migrate:v11'] = merged.added;
+      inserted['migrate:v12'] = merged.added;
     }
   }
 
