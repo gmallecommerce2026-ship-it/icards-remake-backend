@@ -15,10 +15,14 @@ import { Service } from '../services/schemas/service.schema.js';
 import { Page } from '../pages/schemas/page.schema.js';
 import { CatalogAdminController } from './catalog-admin.controller.js';
 import { CatalogAdminService } from './catalog-admin.service.js';
+import { AdminTemplatesController } from './admin-templates.controller.js';
+import { AdminTemplatesService } from './admin-templates.service.js';
+import { InvitationTemplate } from '../templates/schemas/invitation-template.schema.js';
+import { TemplateCategoryNode } from '../templates/schemas/template-category-node.schema.js';
 
 @Module({
-  imports: [TypeOrmModule.forFeature([User, Invitation, Wish, ServiceRequest, Product, Service, Page]), PassportModule.register({}), SettingsModule],
-  controllers: [AdminController, AdminSettingsController, CatalogAdminController],
-  providers: [AdminService, CatalogAdminService, RolesGuard],
+  imports: [TypeOrmModule.forFeature([User, Invitation, Wish, ServiceRequest, Product, Service, Page, InvitationTemplate, TemplateCategoryNode]), PassportModule.register({}), SettingsModule],
+  controllers: [AdminController, AdminSettingsController, CatalogAdminController, AdminTemplatesController],
+  providers: [AdminService, CatalogAdminService, AdminTemplatesService, RolesGuard],
 })
 export class AdminModule {}

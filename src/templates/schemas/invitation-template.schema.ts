@@ -15,6 +15,16 @@ import {
   type TemplateSample,
 } from '../../catalog/catalog.types.js';
 
+/** Thiết kế canvas của mẫu: cùng định dạng với bản nháp thiệp của studio. Trống thì studio dựng từ sample/layout. */
+export interface TemplateDesign {
+  /** Theo từng trang (cover / inside / back): mảng phần tử canvas. */
+  pages: Record<string, unknown>;
+  /** Hình nền theo từng trang. */
+  backdrops: Record<string, unknown>;
+  format: string;
+  orientation: string;
+}
+
 @Entity('invitation_templates')
 export class InvitationTemplate extends BaseEntity {
   @Index({ unique: true })
@@ -82,6 +92,10 @@ export class InvitationTemplate extends BaseEntity {
   @Index()
   @Column({ type: 'char', length: 24, nullable: true })
   categoryId?: string | null;
+
+  /** Thiết kế canvas do admin lưu từ studio (null = chưa thiết kế, studio dựng từ sample). */
+  @Column({ type: 'json', nullable: true })
+  design?: TemplateDesign | null;
 
   @ManyToOne(() => TemplateCategoryNode, { nullable: true, onDelete: 'SET NULL' })
   @JoinColumn({ name: 'categoryId' })

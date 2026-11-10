@@ -103,7 +103,9 @@ export class TemplatesService {
       ],
     });
     if (!t) throw new NotFoundException('Không tìm thấy mẫu thiệp');
-    return toTemplateDto(t, await this.titleStyles(), await this.envelopes());
+    const dto = toTemplateDto(t, await this.titleStyles(), await this.envelopes());
+    // Chỉ trang chi tiết mới trả thiết kế (danh sách không cần, và thiết kế có thể lớn)
+    return t.design ? { ...dto, design: t.design } : dto;
   }
 
   /** Mẫu đã đăng theo danh sách slug (dùng cho khối dịp trên trang chủ). */
