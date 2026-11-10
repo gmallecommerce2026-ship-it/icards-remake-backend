@@ -7,7 +7,8 @@ import { Roles } from '../common/decorators/roles.decorator.js';
 import { SettingsService } from '../settings/settings.service.js';
 import type { SiteSettings } from '../settings/site-config.types.js';
 import { StorageService } from '../storage/storage.service.js';
-import { cleanBanners, cleanNav } from './site-settings.validator.js';
+import { cleanBannerGroups, cleanNav } from './site-settings.validator.js';
+import { normalizeBannerGroups } from '../settings/banner-layout.js';
 
 const DEFAULT_THEME = { companyName: 'iCards', announcementBar: { isEnabled: false, text: '', isMarquee: false } };
 
@@ -27,10 +28,12 @@ export class AdminSettingsController {
     return this.load();
   }
 
-  @Put('banners')
-  async saveBanners(@Body() body: { banners?: unknown }): Promise<SiteSettings> {
+  /** Ghi toàn bộ nhóm banner. Dữ liệu cũ (banners) được bỏ khỏi bản ghi sau lần lưu này. */
+  @Put('banner-groups')
+  async saveBannerGroups(@Body() body: { bannerGroups?: unknown }): Promise<SiteSettings> {
     const current = await this.load();
-    const next: SiteSettings = { ...current, banners: cleanBanners(body?.banners) };
+    const { banners: _legacy, ...rest } = current;
+    const next: SiteSettings = { ...rest, bannerGroups: cleanBannerGroups(body?.bannerGroups) } as SiteSettings;
     await this.settings.setContent('settings', next);
     return next;
   }
@@ -53,11 +56,12 @@ export class AdminSettingsController {
 
   private async load(): Promise<SiteSettings> {
     const s = await this.settings.getContent<Partial<SiteSettings>>('settings', {});
+    const { banners: _legacy, ...rest } = s;
     return {
-      ...s,
+      ...rest,
       theme: s.theme ?? DEFAULT_THEME,
       headerNav: s.headerNav ?? [],
-      banners: s.banners ?? [],
+      bannerGroups: normalizeBannerGroups(s),
       introText: s.introText ?? '',
     } as SiteSettings;
   }

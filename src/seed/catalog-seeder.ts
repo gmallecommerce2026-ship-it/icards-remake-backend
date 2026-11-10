@@ -17,9 +17,10 @@ import { SITE_CONFIG_SEED } from './data/site-config.seed.js';
 import { EXTRA_TEMPLATES, TEMPLATE_TREE_SEED } from './data/template-tree.seed.js';
 import type { TemplateBlockConfig, TemplateTreeNode } from '../settings/site-config.types.js';
 import { assignMissingEnvelopes, isLegacyPresets, sanitizePresets } from '../templates/envelope-presets.js';
+import { normalizeBannerGroups } from '../settings/banner-layout.js';
 
 /** Tăng số này khi thêm dữ liệu seed mới. Lần khởi động sau sẽ bổ sung phần còn thiếu. */
-export const SEED_VERSION = 12;
+export const SEED_VERSION = 13;
 const STATE_KEY = 'seed.state';
 
 export interface SeedSummary {
@@ -314,6 +315,18 @@ export async function seedAll(m: EntityManager, { force = false, repair = false 
       const merged = mergeMissingTreeNodes(treeRow.value as TemplateTreeNode[], TEMPLATE_TREE_SEED);
       if (merged.added) await treeRepo.save({ key: 'templates.tree', value: merged.tree });
       inserted['migrate:v12'] = merged.added;
+    }
+  }
+
+  // Migration v13: banner chuyển từ danh sách phẳng sang nhóm (đầu trang / cuối trang, bố cục).
+  // Chỉ tạo bannerGroups khi chưa có; không ghi đè nhóm admin đã chỉnh.
+  if (seededVersion < 13 && !force) {
+    const settingsRepo = m.getRepository(SiteContent);
+    const settingsRow = await settingsRepo.findOne({ where: { key: 'settings' } });
+    const value = (settingsRow?.value ?? {}) as Record<string, unknown>;
+    if (settingsRow && !Array.isArray(value.bannerGroups)) {
+      await settingsRepo.save({ key: 'settings', value: { ...value, bannerGroups: normalizeBannerGroups(value) } });
+      inserted['migrate:v13'] = 1;
     }
   }
 

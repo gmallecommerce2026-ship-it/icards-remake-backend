@@ -3,6 +3,7 @@ import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
 import { PUBLIC_CONTENT_KEYS, type PublicContentKey } from '../catalog/catalog.types.js';
 import { SiteContent } from './schemas/site-content.schema.js';
+import { normalizeBannerGroups, publicBannerGroups } from './banner-layout.js';
 
 @Injectable()
 export class SettingsService {
@@ -32,7 +33,10 @@ export class SettingsService {
     return row.value;
   }
 
-  getPublicSettings() {
-    return this.getContent<Record<string, unknown>>('settings', {});
+  /** Cấu hình công khai: chỉ nhóm banner đang bật và banner đang bật. Dữ liệu banner cũ không trả về. */
+  async getPublicSettings() {
+    const s = await this.getContent<Record<string, unknown>>('settings', {});
+    const { banners: _legacy, ...rest } = s;
+    return { ...rest, bannerGroups: publicBannerGroups(normalizeBannerGroups(s)) };
   }
 }
