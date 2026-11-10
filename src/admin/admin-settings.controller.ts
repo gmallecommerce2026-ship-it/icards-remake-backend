@@ -8,6 +8,8 @@ import { SettingsService } from '../settings/settings.service.js';
 import type { SiteSettings } from '../settings/site-config.types.js';
 import { StorageService } from '../storage/storage.service.js';
 import { cleanBannerGroups, cleanNav } from './site-settings.validator.js';
+import { cleanPageCopy } from './catalog-admin.validator.js';
+import { resolvePageCopy } from '../settings/page-copy.js';
 import { normalizeBannerGroups } from '../settings/banner-layout.js';
 
 const DEFAULT_THEME = { companyName: 'iCards', announcementBar: { isEnabled: false, text: '', isMarquee: false } };
@@ -38,6 +40,14 @@ export class AdminSettingsController {
     return next;
   }
 
+  @Put('page-copy')
+  async savePageCopy(@Body() body: { pageCopy?: unknown }): Promise<SiteSettings> {
+    const current = await this.load();
+    const next: SiteSettings = { ...current, pageCopy: cleanPageCopy(body?.pageCopy) };
+    await this.settings.setContent('settings', next);
+    return next;
+  }
+
   @Put('header-nav')
   async saveHeaderNav(@Body() body: { headerNav?: unknown }): Promise<SiteSettings> {
     const current = await this.load();
@@ -63,6 +73,7 @@ export class AdminSettingsController {
       headerNav: s.headerNav ?? [],
       bannerGroups: normalizeBannerGroups(s),
       introText: s.introText ?? '',
+      pageCopy: resolvePageCopy(s.pageCopy),
     } as SiteSettings;
   }
 }

@@ -15,12 +15,13 @@ import { SiteContent } from '../settings/schemas/site-content.schema.js';
 import { CATALOG_SEED } from './data/catalog.seed.js';
 import { SITE_CONFIG_SEED } from './data/site-config.seed.js';
 import { EXTRA_TEMPLATES, TEMPLATE_TREE_SEED } from './data/template-tree.seed.js';
-import type { TemplateBlockConfig, TemplateTreeNode } from '../settings/site-config.types.js';
+import type { HeaderNavItem, TemplateBlockConfig, TemplateTreeNode } from '../settings/site-config.types.js';
 import { assignMissingEnvelopes, isLegacyPresets, sanitizePresets } from '../templates/envelope-presets.js';
 import { normalizeBannerGroups } from '../settings/banner-layout.js';
+import { withRequiredMenuItems } from '../settings/menu-defaults.js';
 
 /** Tăng số này khi thêm dữ liệu seed mới. Lần khởi động sau sẽ bổ sung phần còn thiếu. */
-export const SEED_VERSION = 13;
+export const SEED_VERSION = 14;
 const STATE_KEY = 'seed.state';
 
 export interface SeedSummary {
@@ -327,6 +328,19 @@ export async function seedAll(m: EntityManager, { force = false, repair = false 
     if (settingsRow && !Array.isArray(value.bannerGroups)) {
       await settingsRepo.save({ key: 'settings', value: { ...value, bannerGroups: normalizeBannerGroups(value) } });
       inserted['migrate:v13'] = 1;
+    }
+  }
+
+  // Migration v14: menu trên web lấy hoàn toàn từ headerNav. Chỉ thêm mục bắt buộc còn thiếu, không đụng mục admin đã có.
+  if (seededVersion < 14 && !force) {
+    const settingsRepo = m.getRepository(SiteContent);
+    const settingsRow = await settingsRepo.findOne({ where: { key: 'settings' } });
+    if (settingsRow) {
+      const value = settingsRow.value as Record<string, unknown>;
+      const nav = Array.isArray(value.headerNav) ? (value.headerNav as HeaderNavItem[]) : [];
+      const merged = withRequiredMenuItems(nav);
+      if (merged.added) await settingsRepo.save({ key: 'settings', value: { ...value, headerNav: merged.nav } });
+      inserted['migrate:v14'] = merged.added;
     }
   }
 

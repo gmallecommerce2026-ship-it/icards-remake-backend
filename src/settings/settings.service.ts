@@ -4,6 +4,7 @@ import { Repository } from 'typeorm';
 import { PUBLIC_CONTENT_KEYS, type PublicContentKey } from '../catalog/catalog.types.js';
 import { SiteContent } from './schemas/site-content.schema.js';
 import { normalizeBannerGroups, publicBannerGroups } from './banner-layout.js';
+import { resolvePageCopy } from './page-copy.js';
 
 @Injectable()
 export class SettingsService {
@@ -37,6 +38,6 @@ export class SettingsService {
   async getPublicSettings() {
     const s = await this.getContent<Record<string, unknown>>('settings', {});
     const { banners: _legacy, ...rest } = s;
-    return { ...rest, bannerGroups: publicBannerGroups(normalizeBannerGroups(s)) };
+    return { ...rest, bannerGroups: publicBannerGroups(normalizeBannerGroups(s)), pageCopy: resolvePageCopy(s.pageCopy) };
   }
 }

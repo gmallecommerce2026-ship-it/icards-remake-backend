@@ -79,6 +79,8 @@ export interface SiteSettings {
   /** @deprecated Dữ liệu cũ, chỉ đọc để chuyển sang bannerGroups. Không ghi thêm. */
   banners?: HomeBanner[];
   introText: string;
+  /** Chữ hiển thị trên trang cửa hàng, dịch vụ, tin tức. Đọc qua resolvePageCopy để luôn có đủ trường. */
+  pageCopy?: import('./page-copy.js').PageCopy;
 }
 
 /** Khối "dịp" trên trang chủ. Lưu theo slug mẫu thiệp để dashboard dễ chỉnh; backend tự đổi sang _id khi trả về. */
