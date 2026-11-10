@@ -29,7 +29,7 @@ import { templateHeaderNav } from '../settings/template-header-nav.js';
 import { HEADER_TEMPLATES } from './data/site-config.seed.js';
 
 /** Tăng số này khi thêm dữ liệu seed mới. Lần khởi động sau sẽ bổ sung phần còn thiếu. */
-export const SEED_VERSION = 15;
+export const SEED_VERSION = 16;
 
 /** Mã nút danh mục gốc của menu cũ (phiên bản 2 của cây). Menu còn đúng các mục này thì được thay bằng cây mới. */
 const LEGACY_TEMPLATE_ROOT_IDS = ['wedding', 'birthday', 'baby', 'event'];
@@ -354,6 +354,18 @@ export async function seedAll(m: EntityManager, { force = false, repair = false 
       const next = arrangeHeaderNav(nav, untouched ? roots : undefined);
       await settingsRepo.save({ key: 'settings', value: { ...value, headerNav: next } });
       inserted['migrate:v15:menu'] = next.length;
+    }
+  }
+
+  // Migration v16: menu gọn lại. Cửa hàng & Dịch vụ là một mục (/shop), Tin tức đứng cuối, bỏ mục Sự kiện thêm ở v15.
+  if (seededVersion < 16 && !force) {
+    const settingsRepo = m.getRepository(SiteContent);
+    const settingsRow = await settingsRepo.findOne({ where: { key: 'settings' } });
+    if (settingsRow) {
+      const value = settingsRow.value as Record<string, unknown>;
+      const nav = Array.isArray(value.headerNav) ? (value.headerNav as HeaderNavItem[]) : [];
+      await settingsRepo.save({ key: 'settings', value: { ...value, headerNav: arrangeHeaderNav(nav) } });
+      inserted['migrate:v16'] = 1;
     }
   }
 

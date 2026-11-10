@@ -28,18 +28,23 @@ describe('arrangeHeaderNav', () => {
       '/templates?category=engagement',
       '/professional',
       '/shop',
-      '/blog?category=su-kien',
       '/blog',
     ]);
-    expect(out.find((i) => i.path === '/shop')?.title).toBe('Cửa hàng');
-    expect(out.map((i) => i.order)).toEqual([1, 2, 3, 4, 5, 6, 7]);
+    expect(out.find((i) => i.path === '/shop')?.title).toBe('Cửa hàng & Dịch vụ');
+    expect(out.map((i) => i.order)).toEqual([1, 2, 3, 4, 5, 6]);
   });
 
   it('giữ danh mục thiệp đang có khi admin đã tự chỉnh (không có danh mục mới)', () => {
     const nav = [item('custom', 'Quà tặng', '/templates?category=custom'), item('shop', 'Cửa hàng', '/shop')];
     const out = arrangeHeaderNav(nav);
     expect(out[0].id).toBe('custom');
-    expect(out.slice(-3).map((i) => i.path)).toEqual(['/shop', '/blog?category=su-kien', '/blog']);
+    expect(out.slice(-2).map((i) => i.path)).toEqual(['/shop', '/blog']);
+  });
+
+  it('gỡ mục Sự kiện cũ (menu-events) khỏi menu', () => {
+    const nav = [item('menu-events', 'Sự kiện', '/blog?category=su-kien'), item('shop', 'Cửa hàng', '/shop')];
+    const out = arrangeHeaderNav(nav);
+    expect(out.some((i) => i.id === 'menu-events')).toBe(false);
   });
 
   it('không thêm trùng mục đã có ở cấp con', () => {
