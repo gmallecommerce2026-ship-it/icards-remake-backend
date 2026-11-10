@@ -10,6 +10,8 @@ export interface TemplateSeed {
   slug: string;
   name: string;
   category: TemplateCategory;
+  /** Mã nút lá trong cây danh mục (xem template-tree.seed.ts). Bỏ trống thì mẫu chỉ thuộc nhóm enum. */
+  categoryId?: string;
   tagline: string;
   description: string;
   price: number;

@@ -1,5 +1,6 @@
-import { Column, Entity, Index } from 'typeorm';
+import { Column, Entity, Index, JoinColumn, ManyToOne } from 'typeorm';
 import { BaseEntity } from '../../common/entities/base.entity.js';
+import { TemplateCategoryNode } from './template-category-node.schema.js';
 import {
   TEMPLATE_CATEGORIES,
   TEMPLATE_FORMATS,
@@ -76,4 +77,13 @@ export class InvitationTemplate extends BaseEntity {
   /** Bố cục hai mặt, chỉ có với format = card. Toạ độ theo tỉ lệ, nên không phụ thuộc kích thước pixel. */
   @Column({ type: 'json', nullable: true })
   layout?: TemplateCardLayout | null;
+
+  /** Nhóm (nút trong cây danh mục) mà mẫu thuộc về. Lọc theo nhóm cha lấy mọi mẫu có keyPath bắt đầu bằng đường đi của nhóm cha. */
+  @Index()
+  @Column({ type: 'char', length: 24, nullable: true })
+  categoryId?: string | null;
+
+  @ManyToOne(() => TemplateCategoryNode, { nullable: true, onDelete: 'SET NULL' })
+  @JoinColumn({ name: 'categoryId' })
+  categoryNode?: TemplateCategoryNode | null;
 }

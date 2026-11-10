@@ -5,8 +5,19 @@ import type { TemplateTitleStyle } from '../../catalog/catalog.types.js';
 import { CATALOG_SEED } from './catalog.seed.js';
 import { ENVELOPE_PRESETS_SEED } from '../../templates/envelope-presets.js';
 import { groupsFromLegacy } from '../../settings/banner-layout.js';
+import { arrangeHeaderNav } from '../../settings/menu-defaults.js';
+import { templateHeaderNav, type HeaderTemplateRef } from '../../settings/template-header-nav.js';
+import { EXTRA_TEMPLATES, TEMPLATE_CATEGORY_OF, TEMPLATE_CATEGORY_TREE_SEED } from './template-tree.seed.js';
 
 const HERO_IMAGE = 'https://pub-f720e3221ef5464a93d19bbdae2cfb86.r2.dev/herohome.png';
+
+/** Mẫu cho menu header: 8 mẫu gốc và mẫu bổ sung, kèm nút lá trong cây danh mục. */
+export const HEADER_TEMPLATES: HeaderTemplateRef[] = [...CATALOG_SEED.templates, ...EXTRA_TEMPLATES].map((t) => ({
+  slug: t.slug,
+  name: t.name,
+  popularity: t.popularity,
+  categoryId: TEMPLATE_CATEGORY_OF[t.slug] ?? null,
+}));
 
 const settings: SiteSettings = {
   theme: {
@@ -14,25 +25,8 @@ const settings: SiteSettings = {
     logoUrl: null,
     announcementBar: { isEnabled: false, text: '', isMarquee: false },
   },
-  // Menu 3 cấp: danh mục -> cột (cùng tên danh mục) -> các mẫu thiệp thuộc danh mục đó.
-  headerNav: CATALOG_SEED.templateCategories.map((c, i) => ({
-    id: c.id,
-    title: c.label,
-    path: `/templates?category=${c.id}`,
-    order: i + 1,
-    isVisible: true,
-    children: [
-      {
-        id: `${c.id}-col`,
-        title: c.label,
-        order: 1,
-        isVisible: true,
-        children: CATALOG_SEED.templates
-          .filter((t) => t.category === c.id)
-          .map((t, j) => ({ id: t.slug, title: t.name, path: `/templates/${t.slug}`, order: j + 1, isVisible: true, children: [] })),
-      },
-    ],
-  })),
+  // Menu gốc: danh mục thiệp (dựng từ cây danh mục seed, cùng nguồn với trang /templates), rồi Chuyên nghiệp, Cửa hàng, Sự kiện, Tin tức.
+  headerNav: arrangeHeaderNav([], templateHeaderNav(TEMPLATE_CATEGORY_TREE_SEED, HEADER_TEMPLATES)),
   // Hero trang chủ mặc định + các nhóm còn lại (đầu trang / cuối trang các trang khác) theo bộ mặc định.
   bannerGroups: groupsFromLegacy([{ id: 'home-hero', name: 'Banner chính', displayPage: 'home', isEnabled: true, imgSrc: HERO_IMAGE, link: '/templates' }]),
   introText: '',

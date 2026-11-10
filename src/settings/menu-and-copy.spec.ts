@@ -5,15 +5,15 @@ import { DEFAULT_PAGE_COPY, resolvePageCopy } from './page-copy.js';
 describe('withRequiredMenuItems', () => {
   it('thêm đủ mục bắt buộc khi menu trống', () => {
     const r = withRequiredMenuItems([]);
-    expect(r.added).toBe(3);
-    expect(r.nav.map((i) => i.path)).toEqual(['/shop', '/blog', '/professional']);
+    expect(r.added).toBe(4);
+    expect(r.nav.map((i) => i.path)).toEqual(['/professional', '/shop', '/blog?category=su-kien', '/blog']);
   });
   it('không thêm trùng khi đã có mục trỏ tới cùng đường dẫn (kể cả trong mục con)', () => {
     const nav = [{ id: 'x', title: 'Mua', path: '/shop', order: 1, isVisible: true, children: [{ id: 'y', title: 'Tin', path: '/blog', order: 1, isVisible: true, children: [] }] }];
     const r = withRequiredMenuItems(nav);
-    expect(r.added).toBe(1);
+    expect(r.added).toBe(2);
     expect(r.nav.filter((i) => i.path === '/blog')).toHaveLength(0);
-    expect(r.nav.at(-1)?.path).toBe('/professional');
+    expect(r.nav.at(-1)?.path).toBe('/blog?category=su-kien');
   });
 });
 

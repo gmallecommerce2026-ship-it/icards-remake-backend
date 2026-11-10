@@ -7,6 +7,7 @@ import type { EntityManager, EntityTarget } from 'typeorm';
 import { stableId } from '../common/utils/stable-id.js';
 import { PUBLIC_CONTENT_KEYS, type PublicContentKey } from '../catalog/catalog.types.js';
 import { InvitationTemplate } from '../templates/schemas/invitation-template.schema.js';
+import { TemplateCategoryNode } from '../templates/schemas/template-category-node.schema.js';
 import { Product } from '../products/schemas/product.schema.js';
 import { Service } from '../services/schemas/service.schema.js';
 import { Page } from '../pages/schemas/page.schema.js';
@@ -14,14 +15,27 @@ import { FaqItem } from '../pages/schemas/faq-item.schema.js';
 import { SiteContent } from '../settings/schemas/site-content.schema.js';
 import { CATALOG_SEED } from './data/catalog.seed.js';
 import { SITE_CONFIG_SEED } from './data/site-config.seed.js';
-import { EXTRA_TEMPLATES, TEMPLATE_TREE_SEED } from './data/template-tree.seed.js';
-import type { HeaderNavItem, TemplateBlockConfig, TemplateTreeNode } from '../settings/site-config.types.js';
+import {
+  EXTRA_TEMPLATES,
+  TEMPLATE_CATEGORY_OF,
+  TEMPLATE_CATEGORY_TREE_SEED,
+  flattenCategorySeed,
+} from './data/template-tree.seed.js';
+import type { HeaderNavItem, TemplateBlockConfig } from '../settings/site-config.types.js';
 import { assignMissingEnvelopes, isLegacyPresets, sanitizePresets } from '../templates/envelope-presets.js';
 import { normalizeBannerGroups } from '../settings/banner-layout.js';
-import { withRequiredMenuItems } from '../settings/menu-defaults.js';
+import { arrangeHeaderNav, withRequiredMenuItems } from '../settings/menu-defaults.js';
+import { templateHeaderNav } from '../settings/template-header-nav.js';
+import { HEADER_TEMPLATES } from './data/site-config.seed.js';
 
 /** Tăng số này khi thêm dữ liệu seed mới. Lần khởi động sau sẽ bổ sung phần còn thiếu. */
-export const SEED_VERSION = 14;
+export const SEED_VERSION = 15;
+
+/** Mã nút danh mục gốc của menu cũ (phiên bản 2 của cây). Menu còn đúng các mục này thì được thay bằng cây mới. */
+const LEGACY_TEMPLATE_ROOT_IDS = ['wedding', 'birthday', 'baby', 'event'];
+
+/** _id ổn định của một nút danh mục, tính từ mã nút. Khớp với categoryId của mẫu thiệp. */
+export const templateCategoryId = (slug: string): string => stableId('tcat', slug);
 const STATE_KEY = 'seed.state';
 
 export interface SeedSummary {
@@ -56,35 +70,6 @@ async function insertMissing<E extends WithId>(
   return missing.length;
 }
 
-/**
- * Gộp các nút còn thiếu từ `seed` vào `existing` theo id, không sửa nút đã có.
- * Dùng cho migration: thêm nhóm mới mà không ghi đè chỉnh sửa trên dashboard. Trả về cây mới và số nút đã thêm.
- */
-export function mergeMissingTreeNodes(
-  existing: TemplateTreeNode[],
-  seed: TemplateTreeNode[],
-): { tree: TemplateTreeNode[]; added: number } {
-  let added = 0;
-  const tree = existing.map((n) => ({ ...n }));
-  for (const sn of seed) {
-    const found = tree.find((n) => n.id === sn.id);
-    if (!found) {
-      tree.push(structuredClone(sn));
-      added += 1 + countNodes(sn.children ?? []);
-      continue;
-    }
-    if (sn.children?.length) {
-      const sub = mergeMissingTreeNodes(found.children ?? [], sn.children);
-      found.children = sub.tree;
-      added += sub.added;
-    }
-  }
-  return { tree, added };
-}
-
-const countNodes = (nodes: TemplateTreeNode[]): number =>
-  nodes.reduce((t, n) => t + 1 + countNodes(n.children ?? []), 0);
-
 /** Ghi một khóa site_content. Không ghi đè nếu đã có, trừ khi force. */
 async function setContentMissing(m: EntityManager, key: string, value: unknown, force: boolean): Promise<number> {
   const repo = m.getRepository(SiteContent);
@@ -108,6 +93,23 @@ export async function seedAll(m: EntityManager, { force = false, repair = false 
   const cfg = SITE_CONFIG_SEED;
   const inserted: Record<string, number> = {};
 
+  // Cây danh mục mẫu thiệp (bảng template_category_nodes). Ghi trước mẫu vì mẫu tham chiếu tới nút.
+  inserted.templateCategories = await insertMissing(
+    m,
+    TemplateCategoryNode,
+    flattenCategorySeed(TEMPLATE_CATEGORY_TREE_SEED).map((r) =>
+      Object.assign(new TemplateCategoryNode(), {
+        _id: templateCategoryId(r.slug),
+        slug: r.slug,
+        label: r.label,
+        parentId: r.parentSlug ? templateCategoryId(r.parentSlug) : null,
+        keyPath: r.keyPath,
+        sortOrder: r.sortOrder,
+      }),
+    ),
+    force,
+  );
+
   inserted.templates = await insertMissing(
     m,
     InvitationTemplate,
@@ -117,6 +119,7 @@ export async function seedAll(m: EntityManager, { force = false, repair = false 
         slug: t.slug,
         name: t.name,
         category: t.category,
+        categoryId: TEMPLATE_CATEGORY_OF[t.slug] ? templateCategoryId(TEMPLATE_CATEGORY_OF[t.slug]) : null,
         tagline: t.tagline,
         description: t.description,
         price: t.price,
@@ -245,8 +248,6 @@ export async function seedAll(m: EntityManager, { force = false, repair = false 
   inserted['content:template.envelopes'] = await setContentMissing(m, 'template.envelopes', cfg.templateEnvelopes, force);
   // v8: danh mục phong bì + lớp lót (hoạ tiết). Chỉ thêm khi chưa có, không ghi đè dữ liệu dashboard.
   inserted['content:envelope.presets'] = await setContentMissing(m, 'envelope.presets', cfg.envelopePresets, force);
-  // v4: cây danh mục mẫu thiệp nhiều cấp (menu + trang /templates). Không ghi đè nếu đã có.
-  inserted['content:templates.tree'] = await setContentMissing(m, 'templates.tree', TEMPLATE_TREE_SEED, force);
 
   // Migration v3: menu và khối dịp phiên bản 2 còn rỗng, nên thay bằng dữ liệu đầy đủ.
   // Chỉ ghi đè hai phần này, giữ nguyên theme, banner, introText. Dashboard chưa tồn tại nên chưa có chỉnh sửa nào bị mất.
@@ -260,12 +261,6 @@ export async function seedAll(m: EntityManager, { force = false, repair = false 
     }
     await setContentMissing(m, 'template.blocks', cfg.templateBlocks, true);
     inserted['migrate:v3'] = 1;
-  }
-
-  // Migration v5: cây danh mục chuyển từ 2 sang 3 cấp (danh mục → nhóm → nhóm con → mẫu). Chỉ ghi đè khóa 'templates.tree'.
-  if (seededVersion < 5 && !force) {
-    await setContentMissing(m, 'templates.tree', TEMPLATE_TREE_SEED, true);
-    inserted['migrate:v5'] = 1;
   }
 
   // Migration v7: font riêng cho TÊN danh mục nằm trong từng khối của 'template.blocks'.
@@ -307,18 +302,6 @@ export async function seedAll(m: EntityManager, { force = false, repair = false 
     inserted['envelopes:assigned'] = added;
   }
 
-  // Migration v12: thêm nhóm "Thiệp 2 mặt" vào cây danh mục đã có trong DB (khóa đã tồn tại nên bước nạp ở trên bỏ qua).
-  // Chỉ thêm nút còn thiếu, không đụng vào nút hiện có. Phải là v12 vì DB đã ở v11 từ lần seed trước.
-  if (seededVersion < 12 && !force) {
-    const treeRepo = m.getRepository(SiteContent);
-    const treeRow = await treeRepo.findOne({ where: { key: 'templates.tree' } });
-    if (treeRow && Array.isArray(treeRow.value)) {
-      const merged = mergeMissingTreeNodes(treeRow.value as TemplateTreeNode[], TEMPLATE_TREE_SEED);
-      if (merged.added) await treeRepo.save({ key: 'templates.tree', value: merged.tree });
-      inserted['migrate:v12'] = merged.added;
-    }
-  }
-
   // Migration v13: banner chuyển từ danh sách phẳng sang nhóm (đầu trang / cuối trang, bố cục).
   // Chỉ tạo bannerGroups khi chưa có; không ghi đè nhóm admin đã chỉnh.
   if (seededVersion < 13 && !force) {
@@ -341,6 +324,36 @@ export async function seedAll(m: EntityManager, { force = false, repair = false 
       const merged = withRequiredMenuItems(nav);
       if (merged.added) await settingsRepo.save({ key: 'settings', value: { ...value, headerNav: merged.nav } });
       inserted['migrate:v14'] = merged.added;
+    }
+  }
+
+  // Migration v15: danh mục mẫu thiệp chuyển sang bảng riêng, mẫu gắn nhóm qua categoryId; menu header lấy danh mục từ cây đó.
+  // Mẫu đã có sẵn chỉ được gán nhóm khi còn trống. Menu chỉ được thay khi danh mục thiệp còn là bộ mặc định.
+  if (seededVersion < 15 && !force) {
+    const tplRepo = m.getRepository(InvitationTemplate);
+    let assigned = 0;
+    for (const [slug, catSlug] of Object.entries(TEMPLATE_CATEGORY_OF)) {
+      const res = await tplRepo
+        .createQueryBuilder()
+        .update(InvitationTemplate)
+        .set({ categoryId: templateCategoryId(catSlug) })
+        .where('slug = :slug AND categoryId IS NULL', { slug })
+        .execute();
+      assigned += res.affected ?? 0;
+    }
+    inserted['migrate:v15:templates'] = assigned;
+
+    const settingsRepo = m.getRepository(SiteContent);
+    const settingsRow = await settingsRepo.findOne({ where: { key: 'settings' } });
+    if (settingsRow) {
+      const value = settingsRow.value as Record<string, unknown>;
+      const nav = Array.isArray(value.headerNav) ? (value.headerNav as HeaderNavItem[]) : [];
+      const isTemplateRoot = (i: HeaderNavItem) => !!i.path?.startsWith('/templates');
+      const untouched = nav.filter(isTemplateRoot).every((r) => LEGACY_TEMPLATE_ROOT_IDS.includes(r.id));
+      const roots = templateHeaderNav(TEMPLATE_CATEGORY_TREE_SEED, HEADER_TEMPLATES);
+      const next = arrangeHeaderNav(nav, untouched ? roots : undefined);
+      await settingsRepo.save({ key: 'settings', value: { ...value, headerNav: next } });
+      inserted['migrate:v15:menu'] = next.length;
     }
   }
 

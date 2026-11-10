@@ -6,6 +6,7 @@
 import 'reflect-metadata';
 import { DataSource } from 'typeorm';
 import { InvitationTemplate } from '../templates/schemas/invitation-template.schema.js';
+import { TemplateCategoryNode } from '../templates/schemas/template-category-node.schema.js';
 import { Product } from '../products/schemas/product.schema.js';
 import { Service } from '../services/schemas/service.schema.js';
 import { ServiceRequest } from '../services/schemas/service-request.schema.js';
@@ -14,7 +15,7 @@ import { FaqItem } from '../pages/schemas/faq-item.schema.js';
 import { SiteContent } from '../settings/schemas/site-content.schema.js';
 import { seedAll } from './catalog-seeder.js';
 
-const ENTITIES = [InvitationTemplate, Product, Service, ServiceRequest, Page, FaqItem, SiteContent];
+const ENTITIES = [InvitationTemplate, TemplateCategoryNode, Product, Service, ServiceRequest, Page, FaqItem, SiteContent];
 
 function required(name: string): string {
   const v = process.env[name];

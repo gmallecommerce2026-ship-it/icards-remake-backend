@@ -1,10 +1,27 @@
 // Cây danh mục mẫu thiệp nhiều cấp + các mẫu bổ sung (sinh bằng hàm, không viết tay từng mẫu).
-// Mẫu gốc (8 mẫu trong catalog.seed.ts) được xếp vào cây qua `existing`. Chỉ THÊM, không sửa mẫu cũ.
-// Cột `category` của bảng là enum 4 giá trị, nên mỗi danh mục gốc ánh xạ về một trong 4 giá trị đó (`base`).
+// Shape của cây (id, label, children) khớp đúng dữ liệu mà các nút lọc nhóm trên trang /templates dùng.
+// Mỗi mẫu được gán vào nút lá qua `categoryId` (mã nút). Mẫu gốc (8 mẫu trong catalog.seed.ts) gán qua `existing`.
+// Chỉ THÊM, không sửa mẫu cũ.
+// Cột `category` của bảng mẫu là enum 4 giá trị, nên mỗi danh mục gốc ánh xạ về một trong 4 giá trị đó (`base`).
 import type { TemplateCategory, TemplateMotif, TemplateOrientation } from '../../catalog/catalog.types.js';
 import type { TemplateSeed } from '../catalog.seed-types.js';
-import type { TemplateTreeNode } from '../../settings/site-config.types.js';
 import { buildCardLayout } from './card-layouts.seed.js';
+
+/** Một nút trong cây danh mục: đúng các trường id, label, children của nút lọc nhóm phía FE. */
+export interface TemplateCategorySeed {
+  id: string;
+  label: string;
+  children: TemplateCategorySeed[];
+}
+
+/** Một dòng bảng template_category_nodes, suy ra từ cây seed. */
+export interface TemplateCategoryRowSeed {
+  slug: string;
+  label: string;
+  parentSlug: string | null;
+  keyPath: string;
+  sortOrder: number;
+}
 
 interface GroupDef {
   id: string;
@@ -235,9 +252,11 @@ const slugify = (s: string) =>
 
 const extra: TemplateSeed[] = [];
 let n = 0;
+/** Mã nút của từng mẫu (slug mẫu -> mã nút lá). Gồm cả 8 mẫu gốc và mẫu bổ sung. */
+const categoryOf: Record<string, string> = {};
 
-function build(root: RootDef, g: GroupDef): TemplateTreeNode {
-  const slugs: string[] = [...(g.existing ?? [])];
+function build(root: RootDef, g: GroupDef): TemplateCategorySeed {
+  for (const slug of g.existing ?? []) categoryOf[slug] = g.id;
   for (const name of g.names ?? []) {
     const i = n++;
     const [bg, ink, accent, soft] = PALETTES[i % PALETTES.length];
@@ -264,6 +283,7 @@ function build(root: RootDef, g: GroupDef): TemplateTreeNode {
       slug,
       name,
       category: root.base,
+      categoryId: g.id,
       tagline: `${g.label}, ${root.label.toLowerCase()}`,
       description: g.orientation
         ? `Thiệp hai mặt khổ ${ORIENTATION_LABEL[g.orientation]}: mặt trước ghi tiêu đề và thời gian, mặt sau ghi lời mời và địa điểm. Thay chữ, màu và ảnh theo ý bạn rồi gửi link cho khách mời.`
@@ -277,22 +297,42 @@ function build(root: RootDef, g: GroupDef): TemplateTreeNode {
       sample,
       ...card,
     });
-    slugs.push(slug);
+    categoryOf[slug] = g.id;
   }
-  const node: TemplateTreeNode = { id: g.id, label: g.label };
-  if (slugs.length) node.templateSlugs = slugs;
-  if (g.children?.length) node.children = g.children.map((c) => build(root, c));
-  return node;
+  return {
+    id: g.id,
+    label: g.label,
+    children: (g.children ?? []).map((c) => build(root, c)),
+  };
 }
 
-export const TEMPLATE_TREE_SEED: TemplateTreeNode[] = ROOTS.map((r) => ({
+/** Cây danh mục seed: mỗi danh mục gốc là một nút có children, cùng shape với nút lọc nhóm phía FE. */
+export const TEMPLATE_CATEGORY_TREE_SEED: TemplateCategorySeed[] = ROOTS.map((r) => ({
   id: r.id,
   label: r.label,
   children: r.groups.map((g) => build(r, g)),
 }));
 
-/** Mẫu bổ sung (không gồm 8 mẫu gốc). */
+/** Mẫu bổ sung (không gồm 8 mẫu gốc). Mỗi mẫu có categoryId là mã nút lá. */
 export const EXTRA_TEMPLATES: TemplateSeed[] = extra;
+
+/** Slug mẫu -> mã nút lá, gồm mọi mẫu (kể cả 8 mẫu gốc). Dùng để gán categoryId khi nạp seed. */
+export const TEMPLATE_CATEGORY_OF: Readonly<Record<string, string>> = categoryOf;
+
+/** Chuyển cây lồng nhau thành các dòng phẳng (kèm đường đi keyPath). Dùng để ghi bảng template_category_nodes. */
+export function flattenCategorySeed(
+  nodes: TemplateCategorySeed[],
+  parentSlug: string | null = null,
+  parentPath: string[] = [],
+  out: TemplateCategoryRowSeed[] = [],
+): TemplateCategoryRowSeed[] {
+  nodes.forEach((node, i) => {
+    const path = [...parentPath, node.id];
+    out.push({ slug: node.id, label: node.label, parentSlug, keyPath: path.join('/'), sortOrder: i + 1 });
+    flattenCategorySeed(node.children, node.id, path, out);
+  });
+  return out;
+}
 
 /** Danh mục gốc -> giá trị enum của cột category. FE dùng để lọc theo danh mục gốc. */
 export const ROOT_BASE: Record<string, TemplateCategory> = Object.fromEntries(ROOTS.map((r) => [r.id, r.base]));

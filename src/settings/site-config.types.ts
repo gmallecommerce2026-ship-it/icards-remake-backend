@@ -92,15 +92,3 @@ export interface TemplateBlockConfig {
   /** Font, cỡ, màu... của TÊN danh mục trên trang chủ. Bỏ trống thì FE dùng kiểu mặc định. */
   titleStyle?: TemplateTitleStyle;
 }
-
-/**
- * Cây danh mục mẫu thiệp nhiều cấp (khóa 'templates.tree' trong site_content).
- * Cấp tùy ý: mỗi nút có thể chứa nút con (children) và/hoặc mẫu thiệp (templateSlugs).
- * Chỉ nút gốc cần `category` (giá trị enum lưu trong bảng invitation_templates).
- */
-export interface TemplateTreeNode {
-  id: string;
-  label: string;
-  children?: TemplateTreeNode[];
-  templateSlugs?: string[];
-}

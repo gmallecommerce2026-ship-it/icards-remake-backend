@@ -3,6 +3,7 @@ import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
 import { escapeLike } from '../common/utils/object-id.js';
 import { InvitationTemplate } from './schemas/invitation-template.schema.js';
+import { TemplateCategoryNode } from './schemas/template-category-node.schema.js';
 import { SettingsService } from '../settings/settings.service.js';
 import type { TemplatesQueryDto } from './dto/templates-query.dto.js';
 import { resolveTitleStyle, type TitleStyleMap } from './title-style.js';
@@ -66,6 +67,14 @@ export class TemplatesService {
       .where('t.isPublished = :pub', { pub: true });
     if (q.category)
       qb.andWhere('t.category = :category', { category: q.category });
+    if (q.categoryId) {
+      // Lọc theo nút trong cây: lấy mẫu gắn đúng nút đó hoặc gắn ở mọi nút con (keyPath bắt đầu bằng keyPath của nút + '/').
+      qb.innerJoin(TemplateCategoryNode, 'tc', 'tc._id = t.categoryId')
+        .innerJoin(TemplateCategoryNode, 'tn', 'tn.slug = :categoryId', { categoryId: q.categoryId })
+        .andWhere(
+          '(tc.keyPath = tn.keyPath OR SUBSTRING(tc.keyPath, 1, CHAR_LENGTH(tn.keyPath) + 1) = CONCAT(tn.keyPath, \'/\'))',
+        );
+    }
     if (q.format) qb.andWhere('t.format = :format', { format: q.format });
     if (q.orientation) qb.andWhere('t.orientation = :orientation', { orientation: q.orientation });
     if (q.search?.trim()) {
