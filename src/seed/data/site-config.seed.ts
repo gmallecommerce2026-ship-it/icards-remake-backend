@@ -4,6 +4,7 @@ import type { SiteSettings, TemplateBlockConfig } from '../../settings/site-conf
 import type { TemplateTitleStyle } from '../../catalog/catalog.types.js';
 import { CATALOG_SEED } from './catalog.seed.js';
 import { ENVELOPE_PRESETS_SEED } from '../../templates/envelope-presets.js';
+import { groupsFromLegacy } from '../../settings/banner-layout.js';
 
 const HERO_IMAGE = 'https://pub-f720e3221ef5464a93d19bbdae2cfb86.r2.dev/herohome.png';
 
@@ -32,7 +33,8 @@ const settings: SiteSettings = {
       },
     ],
   })),
-  banners: [{ id: 'home-hero', name: 'Banner chính', displayPage: 'home', isEnabled: true, imgSrc: HERO_IMAGE, link: '/templates' }],
+  // Hero trang chủ mặc định + các nhóm còn lại (đầu trang / cuối trang các trang khác) theo bộ mặc định.
+  bannerGroups: groupsFromLegacy([{ id: 'home-hero', name: 'Banner chính', displayPage: 'home', isEnabled: true, imgSrc: HERO_IMAGE, link: '/templates' }]),
   introText: '',
 };
 
