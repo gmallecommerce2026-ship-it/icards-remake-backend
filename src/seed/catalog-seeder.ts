@@ -17,6 +17,8 @@ import { CATALOG_SEED } from './data/catalog.seed.js';
 import { DESIGN_ASSETS_SEED_DATA } from './data/design-assets.seed.js';
 import { DESIGN_ASSETS_KEY } from '../design-assets/design-assets.js';
 import { SITE_CONFIG_SEED } from './data/site-config.seed.js';
+import { TEMPLATE_HEROES_SEED } from './data/template-heroes.seed.js';
+import { TEMPLATE_HEROES_KEY, migrateHeroesV18 } from '../templates/template-heroes.js';
 import {
   EXTRA_TEMPLATES,
   TEMPLATE_CATEGORY_OF,
@@ -31,7 +33,7 @@ import { templateHeaderNav } from '../settings/template-header-nav.js';
 import { HEADER_TEMPLATES } from './data/site-config.seed.js';
 
 /** Tăng số này khi thêm dữ liệu seed mới. Lần khởi động sau sẽ bổ sung phần còn thiếu. */
-export const SEED_VERSION = 17;
+export const SEED_VERSION = 18;
 
 /** Mã nút danh mục gốc của menu cũ (phiên bản 2 của cây). Menu còn đúng các mục này thì được thay bằng cây mới. */
 const LEGACY_TEMPLATE_ROOT_IDS = ['wedding', 'birthday', 'baby', 'event'];
@@ -252,6 +254,8 @@ export async function seedAll(m: EntityManager, { force = false, repair = false 
   inserted['content:envelope.presets'] = await setContentMissing(m, 'envelope.presets', cfg.envelopePresets, force);
   // v17: tài nguyên thiết kế (phông, màu, hình nền, phần tử, khung, lưới). Chỉ thêm khi chưa có, không ghi đè dashboard.
   inserted[`content:${DESIGN_ASSETS_KEY}`] = await setContentMissing(m, DESIGN_ASSETS_KEY, DESIGN_ASSETS_SEED_DATA, force);
+  // v18: hero 3D theo danh mục gốc. Chỉ thêm khi chưa có, không ghi đè cấu hình dashboard.
+  inserted[`content:${TEMPLATE_HEROES_KEY}`] = await setContentMissing(m, TEMPLATE_HEROES_KEY, TEMPLATE_HEROES_SEED, force);
 
   // Migration v3: menu và khối dịp phiên bản 2 còn rỗng, nên thay bằng dữ liệu đầy đủ.
   // Chỉ ghi đè hai phần này, giữ nguyên theme, banner, introText. Dashboard chưa tồn tại nên chưa có chỉnh sửa nào bị mất.
@@ -374,6 +378,19 @@ export async function seedAll(m: EntityManager, { force = false, repair = false 
       const nav = Array.isArray(value.headerNav) ? (value.headerNav as HeaderNavItem[]) : [];
       await settingsRepo.save({ key: 'settings', value: { ...value, headerNav: arrangeHeaderNav(nav) } });
       inserted['migrate:v16'] = 1;
+    }
+  }
+
+  // Migration v18: hero mở rộng sang 10 danh mục gốc, kiểu cũ (dải, trụ, tường) đổi thành phong bì. Giữ nguyên chỉnh sửa của admin.
+  if (seededVersion < 18 && !force) {
+    const heroesRepo = m.getRepository(SiteContent);
+    const heroesRow = await heroesRepo.findOne({ where: { key: TEMPLATE_HEROES_KEY } });
+    if (heroesRow) {
+      const next = migrateHeroesV18(heroesRow.value, TEMPLATE_HEROES_SEED);
+      if (JSON.stringify(next) !== JSON.stringify(heroesRow.value)) {
+        await heroesRepo.save({ key: TEMPLATE_HEROES_KEY, value: next });
+        inserted['migrate:v18'] = 1;
+      }
     }
   }
 
