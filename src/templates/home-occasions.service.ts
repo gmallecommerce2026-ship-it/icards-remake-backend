@@ -1,32 +1,56 @@
 import { Injectable } from '@nestjs/common';
-import { InjectRepository } from '@nestjs/typeorm';
-import { Repository } from 'typeorm';
 import { SettingsService } from '../settings/settings.service.js';
-import { InvitationTemplate } from './schemas/invitation-template.schema.js';
+import { TemplatesService } from './templates.service.js';
+import { TemplateCategoriesService } from './template-categories.service.js';
+import type { CategoryTreeNode, CategoryTreeTemplate } from './template-category-tree.js';
 import { HOME_OCCASIONS_KEY, sanitizeHomeOccasions, type HomeOccasionsConfig } from './home-occasions.js';
 
+type TemplateDto = Awaited<ReturnType<TemplatesService['findPublishedBySlugs']>>[number];
+
 export type HomeOccasionsView = HomeOccasionsConfig & {
-  /** ảnh xem trước của mẫu được chọn làm nền (null nếu chưa chọn hoặc mẫu không còn đăng) */
-  backgroundImage: string | null;
+  /**
+   * Mẫu được chọn làm nền, dạng đầy đủ như danh sách mẫu thiệp để FE dựng đúng "ảnh xem trước"
+   * (thiệp + phong bì giống các thẻ mẫu). null nếu chưa chọn hoặc mẫu không còn đăng.
+   */
+  backgroundTemplate: TemplateDto | null;
+  /** Mẫu đại diện của từng danh mục gốc (khóa = slug danh mục): mẫu đầu tiên theo thứ tự cây. */
+  coverTemplates: Record<string, TemplateDto>;
 };
+
+/** Mẫu đầu tiên theo thứ tự cây (mẫu của nút trước, rồi tới nhóm con). */
+function firstTemplate(node: CategoryTreeNode): CategoryTreeTemplate | undefined {
+  if (node.templates[0]) return node.templates[0];
+  for (const c of node.children) {
+    const t = firstTemplate(c);
+    if (t) return t;
+  }
+  return undefined;
+}
 
 @Injectable()
 export class HomeOccasionsService {
   constructor(
     private readonly settings: SettingsService,
-    @InjectRepository(InvitationTemplate) private readonly templates: Repository<InvitationTemplate>,
+    private readonly templatesService: TemplatesService,
+    private readonly categories: TemplateCategoriesService,
   ) {}
 
   private async view(cfg: HomeOccasionsConfig): Promise<HomeOccasionsView> {
-    let backgroundImage: string | null = null;
-    if (cfg.backgroundTemplateSlug) {
-      const t = await this.templates.findOne({
-        where: { slug: cfg.backgroundTemplateSlug, isPublished: true },
-        select: ['_id', 'previewImage'],
-      });
-      backgroundImage = t?.previewImage ?? null;
+    const tree = await this.categories.tree();
+    const coverSlugs: Record<string, string> = {};
+    for (const root of tree) {
+      const t = firstTemplate(root);
+      if (t) coverSlugs[root.id] = t.slug;
     }
-    return { ...cfg, backgroundImage };
+    const wanted = [...new Set([...Object.values(coverSlugs), ...(cfg.backgroundTemplateSlug ? [cfg.backgroundTemplateSlug] : [])])];
+    const found = new Map((await this.templatesService.findPublishedBySlugs(wanted)).map((t) => [t.slug, t]));
+
+    const coverTemplates: Record<string, TemplateDto> = {};
+    for (const [rootId, slug] of Object.entries(coverSlugs)) {
+      const t = found.get(slug);
+      if (t) coverTemplates[rootId] = t;
+    }
+    return { ...cfg, backgroundTemplate: (cfg.backgroundTemplateSlug && found.get(cfg.backgroundTemplateSlug)) || null, coverTemplates };
   }
 
   async get(): Promise<HomeOccasionsView> {
