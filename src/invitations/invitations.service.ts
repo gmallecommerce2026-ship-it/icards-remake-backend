@@ -1,7 +1,7 @@
 import { randomBytes } from 'node:crypto';
 import { Injectable, NotFoundException, PayloadTooLargeException } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
-import { Repository } from 'typeorm';
+import { In, Repository } from 'typeorm';
 import { DEFAULT_SETTINGS, Invitation, type InvitationSettings, type PlannerTask } from './schemas/invitation.schema.js';
 import { Guest } from '../guests/schemas/guest.schema.js';
 import { GuestGroup } from '../guests/schemas/guest-group.schema.js';
@@ -225,6 +225,20 @@ export class InvitationsService {
       if (g) guest = { name: g.name, status: g.status, companions: g.companions };
     }
     const s = inv.settings;
+    // Danh sách khách mời chỉ công khai khi chủ thiệp BẬT "Hiện danh sách khách mời"; chỉ lấy tên (không email/sđt/ghi chú).
+    let guestNames: { attending: string[]; pending: string[] } | null = null;
+    if (s.showGuestList) {
+      const rows = await this.guests.find({
+        where: { invitation: inv._id, status: In(['attending', 'pending']) },
+        select: { name: true, status: true },
+        order: { name: 'ASC' },
+        take: 500,
+      });
+      guestNames = {
+        attending: rows.filter((g) => g.status === 'attending').map((g) => g.name),
+        pending: rows.filter((g) => g.status === 'pending').map((g) => g.name),
+      };
+    }
     return {
       _id: inv._id, slug: inv.slug, title: inv.title, eventType: inv.eventType, templateSlug: inv.templateSlug,
       eventDate: inv.eventDate, cover: inv.cover, info: inv.info, page: inv.page, design: inv.design,
@@ -233,6 +247,7 @@ export class InvitationsService {
         maxCompanions: s.maxCompanions, rsvpDeadline: s.rsvpDeadline,
       },
       guest,
+      guests: guestNames,
     };
   }
 }
