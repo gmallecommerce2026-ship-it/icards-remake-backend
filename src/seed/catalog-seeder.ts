@@ -14,6 +14,8 @@ import { Page } from '../pages/schemas/page.schema.js';
 import { FaqItem } from '../pages/schemas/faq-item.schema.js';
 import { SiteContent } from '../settings/schemas/site-content.schema.js';
 import { CATALOG_SEED } from './data/catalog.seed.js';
+import { DESIGN_ASSETS_SEED_DATA } from './data/design-assets.seed.js';
+import { DESIGN_ASSETS_KEY } from '../design-assets/design-assets.js';
 import { SITE_CONFIG_SEED } from './data/site-config.seed.js';
 import {
   EXTRA_TEMPLATES,
@@ -29,7 +31,7 @@ import { templateHeaderNav } from '../settings/template-header-nav.js';
 import { HEADER_TEMPLATES } from './data/site-config.seed.js';
 
 /** Tăng số này khi thêm dữ liệu seed mới. Lần khởi động sau sẽ bổ sung phần còn thiếu. */
-export const SEED_VERSION = 16;
+export const SEED_VERSION = 17;
 
 /** Mã nút danh mục gốc của menu cũ (phiên bản 2 của cây). Menu còn đúng các mục này thì được thay bằng cây mới. */
 const LEGACY_TEMPLATE_ROOT_IDS = ['wedding', 'birthday', 'baby', 'event'];
@@ -248,6 +250,8 @@ export async function seedAll(m: EntityManager, { force = false, repair = false 
   inserted['content:template.envelopes'] = await setContentMissing(m, 'template.envelopes', cfg.templateEnvelopes, force);
   // v8: danh mục phong bì + lớp lót (hoạ tiết). Chỉ thêm khi chưa có, không ghi đè dữ liệu dashboard.
   inserted['content:envelope.presets'] = await setContentMissing(m, 'envelope.presets', cfg.envelopePresets, force);
+  // v17: tài nguyên thiết kế (phông, màu, hình nền, phần tử, khung, lưới). Chỉ thêm khi chưa có, không ghi đè dashboard.
+  inserted[`content:${DESIGN_ASSETS_KEY}`] = await setContentMissing(m, DESIGN_ASSETS_KEY, DESIGN_ASSETS_SEED_DATA, force);
 
   // Migration v3: menu và khối dịp phiên bản 2 còn rỗng, nên thay bằng dữ liệu đầy đủ.
   // Chỉ ghi đè hai phần này, giữ nguyên theme, banner, introText. Dashboard chưa tồn tại nên chưa có chỉnh sửa nào bị mất.

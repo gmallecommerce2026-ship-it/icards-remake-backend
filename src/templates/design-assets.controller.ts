@@ -2,7 +2,8 @@ import { Controller, Get } from '@nestjs/common';
 import { ApiTags } from '@nestjs/swagger';
 import { SkipThrottle } from '@nestjs/throttler';
 import { SettingsService } from '../settings/settings.service.js';
-import { DESIGN_ASSETS_KEY, DESIGN_ASSETS_SEED, sanitizeDesignAssets } from '../design-assets/design-assets.js';
+import { DESIGN_ASSETS_KEY, sanitizeDesignAssets } from '../design-assets/design-assets.js';
+import { DESIGN_ASSETS_SEED_DATA } from '../seed/data/design-assets.seed.js';
 
 /** Tài nguyên thiết kế để trình thiết kế (studio và admin) bổ sung vào danh sách có sẵn. Công khai. */
 @ApiTags('templates')
@@ -13,6 +14,6 @@ export class DesignAssetsController {
   @SkipThrottle()
   @Get()
   async list() {
-    return sanitizeDesignAssets(await this.settings.getContent<unknown>(DESIGN_ASSETS_KEY, DESIGN_ASSETS_SEED));
+    return sanitizeDesignAssets(await this.settings.getContent<unknown>(DESIGN_ASSETS_KEY, DESIGN_ASSETS_SEED_DATA));
   }
 }
