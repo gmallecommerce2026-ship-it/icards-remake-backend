@@ -5,7 +5,7 @@ import {
   DEFAULT_HERO_PRESET,
   HERO_CATEGORIES,
   HERO_PRESETS,
-  migrateHeroesV18,
+  fillMissingHeroes,
   sanitizeHero,
   sanitizeHeroes,
 } from './template-heroes.js';
@@ -40,24 +40,26 @@ describe('kiểu 3D', () => {
   });
 });
 
-describe('migrateHeroesV18', () => {
+describe('fillMissingHeroes (migration v19)', () => {
   const seed = TEMPLATE_HEROES_SEED;
 
-  it('giữ nguyên chỉnh sửa của admin ở danh mục đã có', () => {
+  it('giữ nguyên chỉnh sửa của admin và chỉ đổi kiểu cũ', () => {
     const raw = { wedding: { preset: 'ribbon', title: 'Cưới của tôi', subtitle: 'Mô tả', accent: '#112233', speed: 2, images: [] } };
-    const out = migrateHeroesV18(raw, seed);
+    const out = fillMissingHeroes(raw, seed);
     expect(out.wedding).toEqual({ preset: 'envelope', title: 'Cưới của tôi', subtitle: 'Mô tả', accent: '#112233', speed: 2, images: [] });
   });
 
-  it('thêm hero mặc định cho danh mục gốc mới', () => {
-    const out = migrateHeroesV18({}, seed);
-    expect(out.engagement).toEqual(seed.engagement);
-    expect(out.festive).toEqual(seed.festive);
+  it('điền hero mặc định cho mọi danh mục còn trống, kể cả 4 danh mục cũ', () => {
+    const out = fillMissingHeroes({}, seed);
+    expect(Object.keys(out).sort()).toEqual([...HERO_CATEGORIES].sort());
+    expect(out.birthday).toEqual(seed.birthday);
+    expect(out.baby).toEqual(seed.baby);
+    expect(out.event).toEqual(seed.event);
   });
 
-  it('không tự bật lại bốn danh mục cũ mà admin đã tắt', () => {
-    const out = migrateHeroesV18({ wedding: { preset: 'envelope', title: 'Có' } }, seed);
-    expect(out.birthday).toBeUndefined();
-    expect(out.event).toBeUndefined();
+  it('không ghi đè danh mục admin đã có', () => {
+    const out = fillMissingHeroes({ birthday: { preset: 'fan', title: 'Sinh nhật bé' } }, seed);
+    expect(out.birthday?.preset).toBe('fan');
+    expect(out.birthday?.title).toBe('Sinh nhật bé');
   });
 });

@@ -18,7 +18,7 @@ import { DESIGN_ASSETS_SEED_DATA } from './data/design-assets.seed.js';
 import { DESIGN_ASSETS_KEY } from '../design-assets/design-assets.js';
 import { SITE_CONFIG_SEED } from './data/site-config.seed.js';
 import { TEMPLATE_HEROES_SEED } from './data/template-heroes.seed.js';
-import { TEMPLATE_HEROES_KEY, migrateHeroesV18 } from '../templates/template-heroes.js';
+import { TEMPLATE_HEROES_KEY, fillMissingHeroes } from '../templates/template-heroes.js';
 import {
   EXTRA_TEMPLATES,
   TEMPLATE_CATEGORY_OF,
@@ -33,7 +33,7 @@ import { templateHeaderNav } from '../settings/template-header-nav.js';
 import { HEADER_TEMPLATES } from './data/site-config.seed.js';
 
 /** Tăng số này khi thêm dữ liệu seed mới. Lần khởi động sau sẽ bổ sung phần còn thiếu. */
-export const SEED_VERSION = 18;
+export const SEED_VERSION = 19;
 
 /** Mã nút danh mục gốc của menu cũ (phiên bản 2 của cây). Menu còn đúng các mục này thì được thay bằng cây mới. */
 const LEGACY_TEMPLATE_ROOT_IDS = ['wedding', 'birthday', 'baby', 'event'];
@@ -381,15 +381,16 @@ export async function seedAll(m: EntityManager, { force = false, repair = false 
     }
   }
 
-  // Migration v18: hero mở rộng sang 10 danh mục gốc, kiểu cũ (dải, trụ, tường) đổi thành phong bì. Giữ nguyên chỉnh sửa của admin.
-  if (seededVersion < 18 && !force) {
+  // Migration v19: điền hero cho mọi danh mục gốc còn trống (kể cả sinh nhật, đầy tháng, sự kiện) và đổi kiểu cũ sang phong bì.
+  // Giữ nguyên chỉnh sửa đã có của admin; chỉ thêm mục thiếu.
+  if (seededVersion < 19 && !force) {
     const heroesRepo = m.getRepository(SiteContent);
     const heroesRow = await heroesRepo.findOne({ where: { key: TEMPLATE_HEROES_KEY } });
     if (heroesRow) {
-      const next = migrateHeroesV18(heroesRow.value, TEMPLATE_HEROES_SEED);
+      const next = fillMissingHeroes(heroesRow.value, TEMPLATE_HEROES_SEED);
       if (JSON.stringify(next) !== JSON.stringify(heroesRow.value)) {
         await heroesRepo.save({ key: TEMPLATE_HEROES_KEY, value: next });
-        inserted['migrate:v18'] = 1;
+        inserted['migrate:v19'] = 1;
       }
     }
   }

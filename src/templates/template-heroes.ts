@@ -18,9 +18,6 @@ export const HERO_CATEGORIES = [
 ] as const;
 export type HeroCategory = (typeof HERO_CATEGORIES)[number];
 
-/** Các danh mục đã có hero từ trước phiên bản seed 18. Với danh mục khác, migration sẽ tự thêm hero mặc định. */
-export const LEGACY_HERO_CATEGORIES: readonly HeroCategory[] = ['wedding', 'birthday', 'baby', 'event'];
-
 /** Kiểu 3D có sẵn: phong bì lật lấy thiệp · xòe quạt · album lật trang · hoa nở · khối xoay. */
 export const HERO_PRESETS = ['envelope', 'fan', 'book', 'flower', 'cube'] as const;
 export type HeroPreset = (typeof HERO_PRESETS)[number];
@@ -90,18 +87,14 @@ export function sanitizeHeroes(raw: unknown): TemplateHeroes {
 }
 
 /**
- * Migration phiên bản seed 18: mở rộng hero sang toàn bộ danh mục gốc và chuyển kiểu cũ sang phong bì.
- * - Giữ nguyên cấu hình admin đã lưu (chỉ đổi preset cũ). Đây là điểm quan trọng: không ghi đè chỉnh sửa.
- * - Danh mục gốc mới (chưa có trong cấu hình) được thêm hero mặc định từ `seed`.
- * - Bốn danh mục cũ không có hero thì giữ nguyên là không có: admin đã chủ động tắt, không tự bật lại.
+ * Migration phiên bản seed 19: điền hero mặc định cho mọi danh mục gốc chưa có cấu hình, kể cả 4 danh mục cũ
+ * (sinh nhật, đầy tháng, sự kiện) và kiểu cũ (dải, trụ, tường) được đổi sang phong bì.
+ * Cấu hình admin đã lưu được giữ nguyên, chỉ đổi kiểu cũ. Admin vẫn có thể tắt lại từng danh mục trong dashboard.
  */
-export function migrateHeroesV18(raw: unknown, seed: TemplateHeroes): TemplateHeroes {
-  const current = raw && typeof raw === 'object' && !Array.isArray(raw) ? (raw as Record<string, unknown>) : {};
-  const out: TemplateHeroes = {};
+export function fillMissingHeroes(raw: unknown, seed: TemplateHeroes): TemplateHeroes {
+  const out: TemplateHeroes = sanitizeHeroes(raw);
   for (const id of HERO_CATEGORIES) {
-    const existing = sanitizeHero(current[id]);
-    if (existing) out[id] = existing;
-    else if (!LEGACY_HERO_CATEGORIES.includes(id) && seed[id]) out[id] = seed[id];
+    if (!out[id] && seed[id]) out[id] = seed[id];
   }
   return out;
 }
