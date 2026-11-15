@@ -9,12 +9,13 @@ import { TemplatesService } from './templates.service.js';
 import { TemplateBlocksService } from './template-blocks.service.js';
 import { EnvelopePresetsController } from './envelope-presets.controller.js';
 import { DesignAssetsController } from './design-assets.controller.js';
+import { TemplateHeroesController } from './template-heroes.controller.js';
 import { InvitationTemplate } from './schemas/invitation-template.schema.js';
 import { TemplateCategoryNode } from './schemas/template-category-node.schema.js';
 
 @Module({
   imports: [TypeOrmModule.forFeature([InvitationTemplate, TemplateCategoryNode]), SettingsModule],
-  controllers: [TemplatesController, TemplateBlocksController, TemplateCategoriesController, EnvelopePresetsController, DesignAssetsController],
+  controllers: [TemplatesController, TemplateBlocksController, TemplateCategoriesController, EnvelopePresetsController, DesignAssetsController, TemplateHeroesController],
   providers: [TemplatesService, TemplateBlocksService, TemplateCategoriesService],
   exports: [TemplatesService, TemplateBlocksService, TemplateCategoriesService],
 })

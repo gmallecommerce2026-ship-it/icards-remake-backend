@@ -18,12 +18,13 @@ import { CatalogAdminService } from './catalog-admin.service.js';
 import { AdminTemplatesController } from './admin-templates.controller.js';
 import { AdminTemplatesService } from './admin-templates.service.js';
 import { AdminDesignAssetsController } from './admin-design-assets.controller.js';
+import { AdminTemplateHeroesController } from './admin-template-heroes.controller.js';
 import { InvitationTemplate } from '../templates/schemas/invitation-template.schema.js';
 import { TemplateCategoryNode } from '../templates/schemas/template-category-node.schema.js';
 
 @Module({
   imports: [TypeOrmModule.forFeature([User, Invitation, Wish, ServiceRequest, Product, Service, Page, InvitationTemplate, TemplateCategoryNode]), PassportModule.register({}), SettingsModule],
-  controllers: [AdminController, AdminSettingsController, CatalogAdminController, AdminTemplatesController, AdminDesignAssetsController],
+  controllers: [AdminController, AdminSettingsController, CatalogAdminController, AdminTemplatesController, AdminDesignAssetsController, AdminTemplateHeroesController],
   providers: [AdminService, CatalogAdminService, AdminTemplatesService, RolesGuard],
 })
 export class AdminModule {}
