@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { cleanBannerGroups } from './site-settings.validator.js';
+import { cleanAnnouncementBar, cleanBannerGroups } from './site-settings.validator.js';
 
 const group = (over: Record<string, unknown> = {}) => ({
   id: 'g1', name: 'Nhóm', page: 'home', slot: 'bottom', layout: 'mosaic-2-1', isEnabled: true, banners: [], ...over,
@@ -35,5 +35,24 @@ describe('cleanBannerGroups', () => {
 
   it('không cho phép tên trống', () => {
     expect(() => cleanBannerGroups([group({ name: '   ' })])).toThrow();
+  });
+});
+
+describe('cleanAnnouncementBar', () => {
+  it('lưu thanh hợp lệ và kẹp tốc độ trong 20..200', () => {
+    const bar = cleanAnnouncementBar({ isEnabled: true, text: ' Miễn phí giao hàng ', backgroundColor: '#27548A', textColor: '#fff', isMarquee: true, speed: 9999, link: '/shop' });
+    expect(bar).toMatchObject({ isEnabled: true, text: 'Miễn phí giao hàng', backgroundColor: '#27548A', isMarquee: true, speed: 200, link: '/shop', isDismissible: false });
+    expect(cleanAnnouncementBar({ speed: 1 }).speed).toBe(20);
+  });
+
+  it('cho phép tắt thanh khi chưa có nội dung, nhưng không cho bật thanh rỗng', () => {
+    expect(cleanAnnouncementBar({ isEnabled: false }).text).toBe('');
+    expect(() => cleanAnnouncementBar({ isEnabled: true, text: '  ' })).toThrow();
+  });
+
+  it('từ chối màu, liên kết và ảnh không an toàn', () => {
+    expect(() => cleanAnnouncementBar({ backgroundColor: 'red; background:url(x)' })).toThrow();
+    expect(() => cleanAnnouncementBar({ link: 'javascript:alert(1)' })).toThrow();
+    expect(() => cleanAnnouncementBar({ backgroundImage: 'http://x.com/a.png' })).toThrow();
   });
 });

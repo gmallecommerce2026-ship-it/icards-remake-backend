@@ -7,7 +7,7 @@ import { Roles } from '../common/decorators/roles.decorator.js';
 import { SettingsService } from '../settings/settings.service.js';
 import type { SiteSettings } from '../settings/site-config.types.js';
 import { StorageService } from '../storage/storage.service.js';
-import { cleanBannerGroups, cleanNav } from './site-settings.validator.js';
+import { cleanAnnouncementBar, cleanBannerGroups, cleanNav } from './site-settings.validator.js';
 import { cleanPageCopy } from './catalog-admin.validator.js';
 import { resolvePageCopy } from '../settings/page-copy.js';
 import { normalizeBannerGroups } from '../settings/banner-layout.js';
@@ -52,6 +52,15 @@ export class AdminSettingsController {
   async saveHeaderNav(@Body() body: { headerNav?: unknown }): Promise<SiteSettings> {
     const current = await this.load();
     const next: SiteSettings = { ...current, headerNav: cleanNav(body?.headerNav) };
+    await this.settings.setContent('settings', next);
+    return next;
+  }
+
+  /** Thanh thông báo (chữ chạy, màu/ảnh nền) phía trên header. Giữ nguyên các trường khác của theme (tên công ty, logo). */
+  @Put('announcement-bar')
+  async saveAnnouncementBar(@Body() body: { announcementBar?: unknown }): Promise<SiteSettings> {
+    const current = await this.load();
+    const next: SiteSettings = { ...current, theme: { ...current.theme, announcementBar: cleanAnnouncementBar(body?.announcementBar) } };
     await this.settings.setContent('settings', next);
     return next;
   }

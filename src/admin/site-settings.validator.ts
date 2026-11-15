@@ -1,6 +1,6 @@
 import { BadRequestException } from '@nestjs/common';
 import { randomBytes } from 'node:crypto';
-import type { BannerGroup, BannerItem, HeaderNavItem } from '../settings/site-config.types.js';
+import type { AnnouncementBar, BannerGroup, BannerItem, HeaderNavItem } from '../settings/site-config.types.js';
 import { isBannerLayout, isBannerPage, isBannerSlot } from '../settings/banner-layout.js';
 
 const MAX_GROUPS = 200;
@@ -117,4 +117,32 @@ export function cleanNav(input: unknown, depth = 1): HeaderNavItem[] {
       children: cleanNav(o.children, depth + 1),
     };
   });
+}
+
+const HEX_COLOR = /^#([0-9a-f]{3}|[0-9a-f]{6}|[0-9a-f]{8})$/i;
+const color = (v: unknown, field: string): string | undefined => {
+  const c = text(v, 9, field);
+  if (!c) return undefined;
+  if (!HEX_COLOR.test(c)) throw new BadRequestException(`${field} phải là mã màu dạng #RRGGBB.`);
+  return c;
+};
+
+/** Thanh thông báo phía trên header: chữ (có thể chạy), liên kết, màu hoặc ảnh nền. */
+export function cleanAnnouncementBar(input: unknown): AnnouncementBar {
+  const o = asObject(input);
+  const speedN = typeof o.speed === 'number' && Number.isFinite(o.speed) ? o.speed : 60;
+  const isEnabled = o.isEnabled === true;
+  const msg = text(o.text, 300, 'Nội dung thông báo');
+  if (isEnabled && !msg) throw new BadRequestException('Nhập nội dung thông báo trước khi bật thanh.');
+  return {
+    isEnabled,
+    text: msg,
+    link: safeUrl(text(o.link, 500, 'Liên kết'), 'Liên kết') || undefined,
+    backgroundColor: color(o.backgroundColor, 'Màu nền'),
+    textColor: color(o.textColor, 'Màu chữ'),
+    backgroundImage: safeUrl(text(o.backgroundImage, 2000, 'Ảnh nền'), 'Ảnh nền') || undefined,
+    isMarquee: o.isMarquee === true,
+    speed: Math.round(Math.min(200, Math.max(20, speedN))),
+    isDismissible: o.isDismissible === true,
+  };
 }

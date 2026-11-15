@@ -69,6 +69,10 @@ export interface AnnouncementBar {
   textColor?: string;
   backgroundImage?: string;
   isMarquee: boolean;
+  /** tốc độ chữ chạy (px/giây), 20 – 200; mặc định 60 */
+  speed?: number;
+  /** có nút ✕ cho khách tắt thanh hay không; mặc định không */
+  isDismissible?: boolean;
 }
 
 export interface SiteSettings {
