@@ -329,7 +329,9 @@ export async function seedAll(m: EntityManager, { force = false, repair = false 
 
   // Migration v15: danh mục mẫu thiệp chuyển sang bảng riêng, mẫu gắn nhóm qua categoryId; menu header lấy danh mục từ cây đó.
   // Mẫu đã có sẵn chỉ được gán nhóm khi còn trống. Menu chỉ được thay khi danh mục thiệp còn là bộ mặc định.
-  if (seededVersion < 15 && !force) {
+  // --repair cũng chạy bước gán nhóm (an toàn: chỉ đụng mẫu còn categoryId IS NULL), để sửa DB đã có
+  // bảng/cột mới nhưng chưa có dữ liệu nhóm (vd. vừa chạy scripts/migrations/ensure-template-schema.mjs).
+  if ((seededVersion < 15 || repair) && !force) {
     const tplRepo = m.getRepository(InvitationTemplate);
     let assigned = 0;
     for (const [slug, catSlug] of Object.entries(TEMPLATE_CATEGORY_OF)) {
@@ -342,7 +344,9 @@ export async function seedAll(m: EntityManager, { force = false, repair = false 
       assigned += res.affected ?? 0;
     }
     inserted['migrate:v15:templates'] = assigned;
+  }
 
+  if (seededVersion < 15 && !force) {
     const settingsRepo = m.getRepository(SiteContent);
     const settingsRow = await settingsRepo.findOne({ where: { key: 'settings' } });
     if (settingsRow) {

@@ -36,3 +36,10 @@ Dữ liệu mẫu (mẫu thiệp, sản phẩm, dịch vụ, blog, FAQ, quy trì
 npm run seed    # cần Node >= 22.9 (dùng --env-file-if-exists); đọc DB_* từ .env
 ```
 Idempotent: chạy lại chỉ cập nhật theo slug, không nhân đôi và không xoá bản ghi đã bỏ khỏi seed. Khi `DB_SYNCHRONIZE=false` thì seed không tự tạo bảng.
+
+## Dashboard mẫu thiệp / phong bì báo lỗi "Không tải được"
+Nguyên nhân thường gặp: DB production (`DB_SYNCHRONIZE=false`) chưa có đủ bảng/cột của mẫu thiệp. Khi đó `GET /api/admin/templates` trả 500 và cả hai tab (Thiết kế, Phong bì) đều không tải được.
+```bash
+npm run db:ensure-templates   # chỉ thêm bảng/cột còn thiếu, chạy nhiều lần vẫn an toàn
+npm run seed -- --repair      # nạp lại danh mục nhóm và gán nhóm cho mẫu còn trống
+```
