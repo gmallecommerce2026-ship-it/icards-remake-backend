@@ -7,7 +7,7 @@ export const HERO_CATEGORIES = ['wedding', 'birthday', 'baby', 'event'] as const
 export type HeroCategory = (typeof HERO_CATEGORIES)[number];
 
 /** Kiểu 3D có sẵn: dải nghiêng chạy ngang · vòng trụ quay theo cuộn · tường thẻ 3D */
-export const HERO_PRESETS = ['ribbon', 'cylinder', 'wall'] as const;
+export const HERO_PRESETS = ['ribbon', 'cylinder', 'wall', 'envelope'] as const;
 export type HeroPreset = (typeof HERO_PRESETS)[number];
 
 export type TemplateHero = {
