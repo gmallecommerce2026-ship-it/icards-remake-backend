@@ -18,6 +18,7 @@ import { ServicesModule } from './services/services.module.js';
 import { SettingsModule } from './settings/settings.module.js';
 import { SeedModule } from './seed/seed.module.js';
 import { AdminModule } from './admin/admin.module.js';
+import { AppsModule } from './apps/apps.module.js';
 import { AppController } from './app.controller.js';
 import { AppService } from './app.service.js';
 
@@ -56,6 +57,7 @@ import { AppService } from './app.service.js';
     SettingsModule,
     SeedModule,
     AdminModule,
+    AppsModule,
   ],
   controllers: [AppController],
   providers: [AppService, { provide: APP_GUARD, useClass: ThrottlerGuard }],

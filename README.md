@@ -43,3 +43,6 @@ Nguyên nhân thường gặp: DB production (`DB_SYNCHRONIZE=false`) chưa có 
 npm run db:ensure-templates   # chỉ thêm bảng/cột còn thiếu, chạy nhiều lần vẫn an toàn
 npm run seed -- --repair      # nạp lại danh mục nhóm và gán nhóm cho mẫu còn trống
 ```
+
+## Ứng dụng trong trình thiết kế (AI, kết nối bên thứ ba)
+Xem hướng dẫn cấu hình trong [`docs/APPS_SETUP.md`](docs/APPS_SETUP.md). Biến cần đặt: `ANTHROPIC_API_KEY`, `AI_MODEL` (tùy chọn).
