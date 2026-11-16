@@ -63,6 +63,33 @@ const PEOPLE: { name: string; status: 'pending' | 'attending' | 'declined'; emai
   { name: 'Hoàng Gia Huy', status: 'pending', email: null }, // không có email: không được nhắc
 ];
 
+/** Tạo bảng event_reminders nếu chưa có. Chỉ tạo đúng một bảng này, không đụng các bảng khác. */
+const CREATE_EVENT_REMINDERS = [
+  'CREATE TABLE IF NOT EXISTS event_reminders (',
+  '  _id char(24) NOT NULL PRIMARY KEY,',
+  '  createdAt datetime(6) NOT NULL DEFAULT CURRENT_TIMESTAMP(6),',
+  '  updatedAt datetime(6) NOT NULL DEFAULT CURRENT_TIMESTAMP(6) ON UPDATE CURRENT_TIMESTAMP(6),',
+  '  invitation char(24) NOT NULL,',
+  '  owner char(24) NOT NULL,',
+  '  daysBefore int NOT NULL,',
+  '  enabled tinyint(1) NOT NULL DEFAULT 1,',
+  "  status enum('scheduled','sending','sent','skipped') NOT NULL DEFAULT 'scheduled',",
+  '  sendAt datetime NULL,',
+  '  claimedAt datetime NULL,',
+  '  `cursor` char(24) NULL,',
+  '  sentCount int NOT NULL DEFAULT 0,',
+  '  failedCount int NOT NULL DEFAULT 0,',
+  '  sentAt datetime NULL,',
+  '  INDEX IDX_event_reminders_status_sendAt (status, sendAt),',
+  '  UNIQUE INDEX UQ_event_reminders_invitation_daysBefore (invitation, daysBefore)',
+  ") DEFAULT CHARSET=utf8mb4",
+].join('\n');
+
+async function ensureEventRemindersTable(ds: DataSource): Promise<void> {
+  await ds.query(CREATE_EVENT_REMINDERS);
+  console.log('Bảng event_reminders đã sẵn sàng.');
+}
+
 async function main() {
   const ownerEmail = required('SEED_OWNER_EMAIL').toLowerCase();
   const ownerUsername = (process.env.SEED_OWNER_USERNAME ?? 'demo-owner').trim();
@@ -83,6 +110,7 @@ async function main() {
     synchronize: false,
   });
   await ds.initialize();
+  await ensureEventRemindersTable(ds);
 
   try {
     const userRepo = ds.getRepository(User);
