@@ -91,9 +91,10 @@ async function ensureEventRemindersTable(ds: DataSource): Promise<void> {
 }
 
 async function main() {
-  const ownerEmail = required('SEED_OWNER_EMAIL').toLowerCase();
+  // Không cần biến môi trường: chủ thiệp demo tự có email và mật khẩu ngẫu nhiên (không cần đăng nhập để xem nhắc lịch)
+  const ownerEmail = (process.env.SEED_OWNER_EMAIL ?? 'chuthiep.demo@icards.local').trim().toLowerCase();
   const ownerUsername = (process.env.SEED_OWNER_USERNAME ?? 'demo-owner').trim();
-  const sendNow = process.env.SEED_SEND_NOW === 'true';
+  const sendNow = process.env.SEED_SEND_NOW !== 'false'; // mặc định: gửi nhắc ngay ở lần quét kế tiếp
   const frontend = (process.env.FRONTEND_URL ?? 'http://localhost:3000').split(',')[0].trim().replace(/\/+$/, '');
   const publicPath = process.env.PUBLIC_EVENT_PATH ?? '/events/view';
 
@@ -121,8 +122,7 @@ async function main() {
     // 1) Tài khoản chủ thiệp: dùng tài khoản có sẵn, hoặc tạo mới nếu có SEED_OWNER_PASSWORD
     let owner = await userRepo.findOne({ where: { email: ownerEmail } });
     if (!owner) {
-      const password = process.env.SEED_OWNER_PASSWORD?.trim() ?? '';
-      if (password.length < 8) throw new Error(`Tài khoản ${ownerEmail} chưa tồn tại: cần SEED_OWNER_PASSWORD (tối thiểu 8 ký tự) để tạo mới`);
+      const password = process.env.SEED_OWNER_PASSWORD?.trim() || randomBytes(12).toString('hex');
       const taken = await userRepo.findOne({ where: { username: ownerUsername } });
       if (taken) throw new Error(`Username "${ownerUsername}" đã có người dùng khác. Đặt SEED_OWNER_USERNAME khác.`);
       owner = await userRepo.save(
