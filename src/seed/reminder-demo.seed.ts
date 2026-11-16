@@ -143,7 +143,7 @@ async function main() {
     // 2) Xoá thiệp demo cũ (nếu có) để chạy lại được
     const old = await invRepo.findOne({ where: { slug: DEMO_SLUG } });
     if (old) {
-      if (old.owner !== owner._id) throw new Error(`Slug "${DEMO_SLUG}" đã thuộc tài khoản khác.`);
+      // slug này chỉ dành cho dữ liệu demo của seed, nên xoá bất kể chủ cũ là ai
       await remRepo.delete({ invitation: old._id });
       await guestRepo.delete({ invitation: old._id });
       await invRepo.delete({ _id: old._id });
