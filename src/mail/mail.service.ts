@@ -78,53 +78,87 @@ Bạn nhận được email này vì được mời tham dự một sự kiện 
 </td></tr></table>`;
   }
 
+  /** Email mời khách: tiêu đề thương hiệu, lời nhắn, khối thời gian/địa điểm, nút xem thiệp và link dự phòng. */
   async sendInvitation(i: InvitationMailInput): Promise<void> {
     const salutation = i.salutation?.trim() || `Thân gửi ${i.guestName}`;
     const subject = i.subject?.trim() || `Thiệp mời: ${i.title}`;
-    const when = i.eventDate ? escapeHtml(i.eventDate) : '';
-    const where = i.venue ? escapeHtml(i.venue) : '';
-    const body = i.message?.trim()
-      ? escapeHtml(i.message).replace(/\n/g, '<br/>')
-      : `${escapeHtml(i.hostName ?? 'Gia chủ')} trân trọng kính mời bạn đến dự.`;
+    const hostLabel = i.hostName?.trim() || 'Gia chủ';
+    const message = i.message?.trim() || `${hostLabel} trân trọng kính mời bạn đến dự.`;
+    const rows: [string, string][] = [];
+    if (i.eventDate) rows.push(['Thời gian', i.eventDate]);
+    if (i.venue) rows.push(['Địa điểm', i.venue]);
 
-    const details = [when && `<strong>Thời gian:</strong> ${when}`, where && `<strong>Địa điểm:</strong> ${where}`]
-      .filter(Boolean)
-      .join('<br/>');
+    const preheader = message.length > 90 ? `${message.slice(0, 87)}...` : message;
+    const rowsHtml = rows
+      .map(
+        ([label, value]) => `<tr>
+<td valign="top" style="padding:8px 0;width:110px;font-family:Arial,Helvetica,sans-serif;font-size:13px;color:${MUTED};">${label}</td>
+<td valign="top" style="padding:8px 0;font-family:Arial,Helvetica,sans-serif;font-size:15px;font-weight:bold;color:${INK};">${escapeHtml(value)}</td>
+</tr>`,
+      )
+      .join('');
 
-    const html = this.shell(
-      `${i.title} — mời bạn xác nhận tham dự`,
-      `<p style="margin:0 0 16px;">${escapeHtml(salutation)},</p>
-<h1 style="font-family:Georgia,'Times New Roman',serif;font-size:24px;line-height:1.3;margin:0 0 16px;color:${INK};">${escapeHtml(i.title)}</h1>
-<p style="margin:0 0 16px;">${body}</p>
-${details ? `<p style="margin:0 0 8px;font-family:Arial,Helvetica,sans-serif;font-size:15px;color:${INK};">${details}</p>` : ''}
-${this.button(i.link, 'Xem thiệp mời & xác nhận tham dự')}
-<p style="margin:0;font-family:Arial,Helvetica,sans-serif;font-size:13px;line-height:1.5;color:${MUTED};">
-Nếu nút không hoạt động, bạn có thể sao chép liên kết sau vào trình duyệt:<br/>
+    const html = `<!DOCTYPE html>
+<html lang="vi">
+<head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><meta name="x-apple-disable-message-reformatting"></head>
+<body style="margin:0;padding:0;background:#f4f1ea;">
+<div style="display:none;max-height:0;overflow:hidden;opacity:0;color:transparent;">${escapeHtml(preheader)}</div>
+<table role="presentation" width="100%" cellspacing="0" cellpadding="0" border="0" style="background:#f4f1ea;">
+<tr><td align="center" style="padding:32px 12px;">
+<table role="presentation" width="100%" cellspacing="0" cellpadding="0" border="0" style="max-width:560px;background:#ffffff;border:1px solid #e7e0d2;border-radius:12px;">
+
+<tr><td align="center" style="background:${BRAND};border-radius:12px 12px 0 0;padding:44px 32px 40px;">
+<p style="margin:0 0 14px;font-family:Arial,Helvetica,sans-serif;font-size:12px;line-height:1.4;letter-spacing:3px;color:#f3d6dc;">THƯ MỜI</p>
+<h1 style="margin:0;font-family:Georgia,'Times New Roman',serif;font-size:28px;line-height:1.3;font-weight:normal;color:#ffffff;">${escapeHtml(i.title)}</h1>
+</td></tr>
+
+<tr><td style="padding:36px 40px 8px;font-family:Georgia,'Times New Roman',serif;font-size:16px;line-height:1.7;color:${INK};">
+<p style="margin:0 0 16px;">${escapeHtml(salutation)},</p>
+<p style="margin:0;color:#3d3d42;">${escapeHtml(message).replace(/\n/g, '<br/>')}</p>
+</td></tr>
+
+${
+  rows.length
+    ? `<tr><td style="padding:24px 40px 0;">
+<table role="presentation" width="100%" cellspacing="0" cellpadding="0" border="0" style="border:1px solid #e7e0d2;border-radius:10px;background:#faf8f4;">
+<tr><td style="padding:6px 22px;"><table role="presentation" width="100%" cellspacing="0" cellpadding="0" border="0">${rowsHtml}</table></td></tr>
+</table></td></tr>`
+    : ''
+}
+
+<tr><td align="center" style="padding:28px 40px 4px;">${this.button(i.link, 'Xem thiệp mời & xác nhận tham dự')}</td></tr>
+<tr><td align="center" style="padding:0 40px 36px;font-family:Arial,Helvetica,sans-serif;font-size:12px;line-height:1.6;color:${MUTED};">
+Nếu nút không hoạt động, bạn có thể sao chép liên kết này vào trình duyệt:<br/>
 <a href="${escapeHtml(i.link)}" style="color:${BRAND};word-break:break-all;">${escapeHtml(i.link)}</a>
-</p>`,
-    );
+</td></tr>
+
+<tr><td align="center" style="background:#f7f3ec;border-top:1px solid #e7e0d2;border-radius:0 0 12px 12px;padding:18px 40px;font-family:Arial,Helvetica,sans-serif;font-size:12px;line-height:1.6;color:${MUTED};">
+Thư này được gửi bởi <strong>${escapeHtml(hostLabel)}</strong> qua iCards.<br/>Cần hỗ trợ? Chỉ cần trả lời email này.
+</td></tr>
+
+</table>
+<p style="margin:20px 0 0;font-family:Arial,Helvetica,sans-serif;font-size:12px;color:#8a8a90;text-align:center;">© iCards.com.vn</p>
+</td></tr>
+</table>
+</body>
+</html>`;
 
     const text = [
       `${salutation},`,
       '',
+      message,
+      '',
       i.title,
-      '',
-      i.message?.trim() || `${i.hostName ?? 'Gia chủ'} trân trọng kính mời bạn đến dự.`,
-      '',
-      i.eventDate ? `Thời gian: ${i.eventDate}` : '',
-      i.venue ? `Địa điểm: ${i.venue}` : '',
+      ...rows.map(([label, value]) => `${label}: ${value}`),
       '',
       `Xem thiệp mời và xác nhận tham dự: ${i.link}`,
       '',
-      'Bạn nhận được email này vì được mời tham dự một sự kiện trên iCards.',
-    ]
-      .filter((l, idx, arr) => !(l === '' && arr[idx - 1] === ''))
-      .join('\n');
+      `Thư này được gửi bởi ${hostLabel} qua iCards. Cần hỗ trợ? Chỉ cần trả lời email này.`,
+    ].join('\n');
 
     await this.send(i.to, subject, html, text);
   }
 
-  /** Email nhắc khách chưa xác nhận tham dự. */
   async sendEventReminder(i: {
     to: string; salutation: string; title: string; daysLeft: number;
     eventDate?: string; venue?: string; link: string;
