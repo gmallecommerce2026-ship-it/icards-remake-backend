@@ -19,6 +19,7 @@ import { SettingsModule } from './settings/settings.module.js';
 import { SeedModule } from './seed/seed.module.js';
 import { AdminModule } from './admin/admin.module.js';
 import { AppsModule } from './apps/apps.module.js';
+import { RemindersModule } from './reminders/reminders.module.js';
 import { AppController } from './app.controller.js';
 import { AppService } from './app.service.js';
 
@@ -58,6 +59,7 @@ import { AppService } from './app.service.js';
     SeedModule,
     AdminModule,
     AppsModule,
+    RemindersModule,
   ],
   controllers: [AppController],
   providers: [AppService, { provide: APP_GUARD, useClass: ThrottlerGuard }],

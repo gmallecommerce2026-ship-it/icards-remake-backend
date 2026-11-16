@@ -124,6 +124,41 @@ Nếu nút không hoạt động, bạn có thể sao chép liên kết sau vào
     await this.send(i.to, subject, html, text);
   }
 
+  /** Email nhắc khách chưa xác nhận tham dự. */
+  async sendEventReminder(i: {
+    to: string; salutation: string; title: string; daysLeft: number;
+    eventDate?: string; venue?: string; link: string;
+  }): Promise<void> {
+    const when = i.eventDate ? escapeHtml(i.eventDate) : '';
+    const where = i.venue ? escapeHtml(i.venue) : '';
+    const details = [when && `<strong>Thời gian:</strong> ${when}`, where && `<strong>Địa điểm:</strong> ${where}`]
+      .filter(Boolean).join('<br/>');
+    const html = this.shell(
+      `Còn ${i.daysLeft} ngày nữa đến ${i.title}`,
+      `<p style="margin:0 0 16px;">${escapeHtml(i.salutation)},</p>
+<p style="margin:0 0 16px;">Còn <strong>${i.daysLeft} ngày</strong> nữa là đến <strong>${escapeHtml(i.title)}</strong>. Bạn vui lòng xác nhận tham dự giúp chúng tôi nhé.</p>
+${details ? `<p style="margin:0 0 8px;font-family:Arial,Helvetica,sans-serif;font-size:15px;color:${INK};">${details}</p>` : ''}
+${this.button(i.link, 'Xác nhận tham dự')}
+<p style="margin:0;font-family:Arial,Helvetica,sans-serif;font-size:13px;line-height:1.5;color:${MUTED};">
+Nếu nút không hoạt động, bạn có thể sao chép liên kết sau vào trình duyệt:<br/>
+<a href="${escapeHtml(i.link)}" style="color:${BRAND};word-break:break-all;">${escapeHtml(i.link)}</a>
+</p>`,
+    );
+    const text = [
+      `${i.salutation},`,
+      '',
+      `Còn ${i.daysLeft} ngày nữa là đến ${i.title}. Bạn vui lòng xác nhận tham dự giúp chúng tôi nhé.`,
+      '',
+      i.eventDate ? `Thời gian: ${i.eventDate}` : '',
+      i.venue ? `Địa điểm: ${i.venue}` : '',
+      '',
+      `Xác nhận tham dự: ${i.link}`,
+      '',
+      'Bạn nhận được email này vì được mời tham dự một sự kiện trên iCards.',
+    ].filter((l, idx, arr) => !(l === '' && arr[idx - 1] === '')).join('\n');
+    await this.send(i.to, `Nhắc xác nhận tham dự: ${i.title}`, html, text);
+  }
+
   async sendResetPassword(to: string, name: string, link: string): Promise<void> {
     const html = this.shell(
       'Đặt lại mật khẩu iCards',
