@@ -28,6 +28,12 @@ export class UpdateSettingsDto {
   @IsOptional() @IsBoolean() showGuestList?: boolean;
   @IsOptional() @IsInt() @Min(0) @Max(20) maxCompanions?: number;
   @IsOptional() @IsDateString() rsvpDeadline?: string;
+  @IsOptional() @IsString() @MaxLength(200) emailSubject?: string;
+  @IsOptional() @IsString() @MaxLength(2000) emailMessage?: string;
+  @IsOptional() @IsIn(['Thân gửi', 'Kính mời', 'Trân trọng kính mời']) salutationStyle?: string;
+  @IsOptional() @IsBoolean() useGlobalSalutation?: boolean;
+  @IsOptional() @IsString() @MaxLength(200) wishesTitle?: string;
+  @IsOptional() @IsString() @MaxLength(300) wishesSubtitle?: string;
 }
 
 export class PublishDto {

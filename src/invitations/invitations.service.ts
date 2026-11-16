@@ -245,6 +245,7 @@ export class InvitationsService {
       settings: {
         allowRsvp: s.allowRsvp, allowWishes: s.allowWishes, moderateWishes: s.moderateWishes, showGuestList: s.showGuestList,
         maxCompanions: s.maxCompanions, rsvpDeadline: s.rsvpDeadline,
+        wishesTitle: s.wishesTitle, wishesSubtitle: s.wishesSubtitle,
       },
       guest,
       guests: guestNames,

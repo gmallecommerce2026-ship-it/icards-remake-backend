@@ -215,9 +215,16 @@ export class GuestsService {
   // ---------------------------------------------------------------- email
   private async deliver(inv: Invitation, g: Guest, message?: string): Promise<{ ok: boolean; error?: string }> {
     const info = inv.info as Record<string, string | undefined>;
+    const st = inv.settings as unknown as Record<string, unknown>;
+    const salutation = `${String(st.salutationStyle ?? 'Thân gửi')} ${g.name}`;
+    const fill = (t: unknown) =>
+      typeof t === 'string' && t.trim()
+        ? t.replace(/\{TênKháchMời\}/g, g.name).replace(/\{LờiXưngHô\}/g, salutation).replace(/\{EmailKháchMời\}/g, g.email ?? '')
+        : undefined;
     try {
       await this.mail.sendInvitation({
-        to: g.email!, guestName: g.name, title: inv.title, hostName: info.host, message,
+        to: g.email!, guestName: g.name, salutation, title: inv.title, hostName: info.host,
+        subject: fill(st.emailSubject), message: message ?? fill(st.emailMessage),
         eventDate: [info.date, info.time].filter(Boolean).join(' · ') || (inv.eventDate ? inv.eventDate.toLocaleDateString('vi-VN') : undefined),
         venue: [info.venue, info.address].filter(Boolean).join(' - ') || undefined,
         link: this.publicLink(inv, g.token),

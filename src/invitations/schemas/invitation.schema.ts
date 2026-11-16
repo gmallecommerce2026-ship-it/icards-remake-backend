@@ -13,6 +13,14 @@ export interface InvitationSettings {
   maxCompanions: number;
   /** ISO string (lưu trong cột JSON) */
   rsvpDeadline?: string | null;
+  /** Email gửi khách: chủ đề, nội dung (hỗ trợ {TênKháchMời} {LờiXưngHô} {EmailKháchMời}) */
+  emailSubject?: string;
+  emailMessage?: string;
+  /** Kiểu xưng hô: 'Thân gửi' | 'Kính mời' | 'Trân trọng kính mời' */
+  salutationStyle?: string;
+  useGlobalSalutation?: boolean;
+  wishesTitle?: string;
+  wishesSubtitle?: string;
 }
 
 export const DEFAULT_SETTINGS: InvitationSettings = {
@@ -21,6 +29,8 @@ export const DEFAULT_SETTINGS: InvitationSettings = {
   moderateWishes: false,
   showGuestList: false,
   maxCompanions: 5,
+  salutationStyle: 'Thân gửi',
+  useGlobalSalutation: false,
 };
 
 export interface PlannerTask {
