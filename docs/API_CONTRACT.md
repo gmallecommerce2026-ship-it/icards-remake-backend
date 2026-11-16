@@ -26,8 +26,9 @@ Studio "Tiếp theo" → EventDetailsEditor "Thêm khách mời"
 | POST | /auth/register | `{username, email, password≥8}` | `{user}` + set cookie |
 | POST | /auth/login | `{login (username|email), password}` | `{user}` + set cookie |
 | POST | /auth/logout | – | `{message}` (xoá cookie) |
-| POST | /auth/forgot-password | `{email}` | `{message}` (luôn 200) |
-| PATCH | /auth/reset-password/:token | `{password}` | `{message}` — link mail: `{FRONTEND_URL}/reset-password?token=…` |
+| POST | /auth/forgot-password | `{email}` | `{message, expiresInSeconds, resendInSeconds}` (luôn 200). Gửi mã OTP 6 số qua email, hết hạn sau 10 phút, gửi lại sau 60 giây |
+| POST | /auth/verify-reset-otp | `{email, code}` | `{resetToken, expiresInSeconds}`. Sai 5 lần thì mã bị vô hiệu. Sai thường trả 400 kèm số lần còn lại |
+| PATCH | /auth/reset-password/:token | `{password}` | `{message}`. `token` là `resetToken` ở bước trên, hết hạn sau 15 phút, dùng một lần |
 
 `user` = `{_id, username, email, fullName?, phone?, avatar?, role, createdAt}`
 

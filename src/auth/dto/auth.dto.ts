@@ -19,3 +19,8 @@ export class ForgotPasswordDto {
 export class ResetPasswordDto {
   @IsString() @MinLength(8) @MaxLength(72) password: string;
 }
+
+export class VerifyResetOtpDto {
+  @IsEmail() email: string;
+  @IsString() @Matches(/^\d{6}$/, { message: 'Mã xác nhận gồm 6 chữ số' }) code: string;
+}

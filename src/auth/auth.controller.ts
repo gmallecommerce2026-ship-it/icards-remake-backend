@@ -3,7 +3,7 @@ import { ApiTags } from '@nestjs/swagger';
 import { Throttle } from '@nestjs/throttler';
 import type { Response } from 'express';
 import { AuthService } from './auth.service.js';
-import { ForgotPasswordDto, LoginDto, RegisterDto, ResetPasswordDto } from './dto/auth.dto.js';
+import { ForgotPasswordDto, LoginDto, RegisterDto, ResetPasswordDto, VerifyResetOtpDto } from './dto/auth.dto.js';
 
 @ApiTags('auth')
 @Controller('auth')
@@ -27,6 +27,12 @@ export class AuthController {
   @HttpCode(200)
   @Post('forgot-password')
   forgot(@Body() dto: ForgotPasswordDto) { return this.auth.forgotPassword(dto); }
+
+  /** Bước 2: xác nhận mã OTP 6 số, nhận resetToken (chỉ dùng được một lần, hết hạn sau 15 phút). */
+  @Throttle({ default: { limit: 10, ttl: 60_000 } })
+  @HttpCode(200)
+  @Post('verify-reset-otp')
+  verifyResetOtp(@Body() dto: VerifyResetOtpDto) { return this.auth.verifyResetOtp(dto); }
 
   @Throttle({ default: { limit: 10, ttl: 60_000 } })
   @Patch('reset-password/:token')

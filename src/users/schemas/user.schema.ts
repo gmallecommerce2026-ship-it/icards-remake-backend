@@ -45,4 +45,15 @@ export class User extends BaseEntity {
 
   @Column({ type: 'datetime', nullable: true, select: false })
   resetPasswordExpires?: Date | null;
+
+  /** SHA-256 của mã OTP 6 số gửi qua email (tách riêng khỏi token đặt lại để không dùng OTP làm token) */
+  @Column({ type: 'varchar', length: 128, nullable: true, select: false })
+  resetOtpHash?: string | null;
+
+  @Column({ type: 'datetime', nullable: true, select: false })
+  resetOtpExpires?: Date | null;
+
+  /** Số lần nhập sai mã OTP hiện tại */
+  @Column({ type: 'int', default: 0, select: false })
+  resetOtpAttempts: number;
 }

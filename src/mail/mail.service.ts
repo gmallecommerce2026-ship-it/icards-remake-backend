@@ -177,4 +177,30 @@ ${this.button(link, 'Đặt lại mật khẩu')}
     ].join('\n');
     await this.send(to, 'Đặt lại mật khẩu iCards', html, text);
   }
+
+
+  /** Email mã OTP 6 số để đặt lại mật khẩu (mã hiển thị lớn, dễ đọc trên mọi thiết bị). */
+  async sendPasswordOtp(to: string, name: string, code: string, ttlMinutes: number): Promise<void> {
+    const digits = escapeHtml(code.split('').join(' '));
+    const html = this.shell(
+      `Mã xác nhận đặt lại mật khẩu iCards: ${code}`,
+      `<p style="margin:0 0 16px;">Xin chào <strong>${escapeHtml(name)}</strong>,</p>
+<p style="margin:0 0 20px;">Bạn vừa yêu cầu đặt lại mật khẩu iCards. Nhập mã xác nhận sau vào trang đặt lại mật khẩu:</p>
+<table role="presentation" cellspacing="0" cellpadding="0" border="0" align="center" style="margin:0 auto 24px;">
+<tr><td align="center" style="background:#f4f1ea;border:1px solid #e7e0d2;border-radius:10px;padding:18px 28px;font-family:Arial,Helvetica,sans-serif;font-size:32px;font-weight:bold;letter-spacing:6px;color:${INK};">${digits}</td></tr></table>
+<p style="margin:0 0 8px;font-family:Arial,Helvetica,sans-serif;font-size:14px;line-height:1.5;color:${INK};">Mã có hiệu lực trong ${ttlMinutes} phút. Tuyệt đối không chia sẻ mã này cho bất kỳ ai.</p>
+<p style="margin:0;font-family:Arial,Helvetica,sans-serif;font-size:13px;line-height:1.5;color:${MUTED};">Nếu không phải bạn yêu cầu, hãy bỏ qua email này. Mật khẩu của bạn vẫn an toàn.</p>`,
+    );
+    const text = [
+      `Xin chào ${name},`,
+      '',
+      'Bạn vừa yêu cầu đặt lại mật khẩu iCards. Mã xác nhận của bạn là:',
+      '',
+      code,
+      '',
+      `Mã có hiệu lực trong ${ttlMinutes} phút. Tuyệt đối không chia sẻ mã này cho bất kỳ ai.`,
+      'Nếu không phải bạn yêu cầu, hãy bỏ qua email này.',
+    ].join('\n');
+    await this.send(to, 'Mã xác nhận đặt lại mật khẩu iCards', html, text);
+  }
 }
