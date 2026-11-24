@@ -68,6 +68,10 @@ export interface AnnouncementBar {
   backgroundColor?: string;
   textColor?: string;
   backgroundImage?: string;
+  /** nền động có sẵn: train (mặc định) | truck | none (chỉ màu nền) */
+  backgroundPreset?: 'train' | 'truck' | 'none';
+  /** chạy chuyển động kể cả khi máy khách bật giảm chuyển động; mặc định không */
+  ignoreReducedMotion?: boolean;
   isMarquee: boolean;
   /** tốc độ chữ chạy (px/giây), 20 – 200; mặc định 60 */
   speed?: number;

@@ -127,6 +127,8 @@ const color = (v: unknown, field: string): string | undefined => {
   return c;
 };
 
+const PRESETS = ['train', 'truck', 'none'] as const;
+
 /** Thanh thông báo phía trên header: chữ (có thể chạy), liên kết, màu hoặc ảnh nền. */
 export function cleanAnnouncementBar(input: unknown): AnnouncementBar {
   const o = asObject(input);
@@ -141,6 +143,10 @@ export function cleanAnnouncementBar(input: unknown): AnnouncementBar {
     backgroundColor: color(o.backgroundColor, 'Màu nền'),
     textColor: color(o.textColor, 'Màu chữ'),
     backgroundImage: safeUrl(text(o.backgroundImage, 2000, 'Ảnh nền'), 'Ảnh nền') || undefined,
+    backgroundPreset: (PRESETS as readonly unknown[]).includes(o.backgroundPreset)
+      ? (o.backgroundPreset as 'train' | 'truck' | 'none')
+      : undefined,
+    ignoreReducedMotion: o.ignoreReducedMotion === true,
     isMarquee: o.isMarquee === true,
     speed: Math.round(Math.min(200, Math.max(20, speedN))),
     isDismissible: o.isDismissible === true,
