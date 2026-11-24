@@ -1,5 +1,6 @@
-// Thêm MỘT tài khoản admin mới. Chỉ INSERT: nếu tên đăng nhập hoặc email đã tồn tại thì KHÔNG sửa gì, chỉ báo và thoát.
-// Không đụng tới user, dữ liệu, mật khẩu hay role của các tài khoản hiện có.
+// Tạo tài khoản admin, hoặc nếu đã có tài khoản cùng tên đăng nhập thì ghi đè mật khẩu.
+// Với tài khoản đã có: chỉ đặt lại mật khẩu, role=admin và isActive=true (để đăng nhập được); các trường khác giữ nguyên.
+// Không đụng tới tài khoản user khác hay dữ liệu khác. Nếu email đã thuộc tài khoản khác thì dừng, không ghi gì.
 //   ADMIN_PASSWORD='Admin@2025' npm run seed:add-admin
 // Tùy chọn: ADMIN_USERNAME (mặc định "admin"), ADMIN_EMAIL (mặc định "admin@icards.com.vn").
 import 'reflect-metadata';
@@ -35,24 +36,27 @@ async function main() {
   await ds.initialize();
   try {
     const repo = ds.getRepository(User);
-    const existing = await repo.findOne({ where: [{ username }, { email }] });
-    if (existing) {
-      console.log(
-        `Không thêm: đã có tài khoản trùng tên đăng nhập hoặc email ` +
-          `(username="${existing.username}", email="${existing.email}"). Dữ liệu hiện có được giữ nguyên.`,
-      );
-      return;
+    const byUsername = await repo.findOne({ where: { username } });
+    const byEmail = await repo.findOne({ where: { email } });
+    if (byEmail && byEmail._id !== byUsername?._id) {
+      throw new Error(`ADMIN_EMAIL "${email}" đã thuộc tài khoản khác ("${byEmail.username}"), không ghi gì.`);
     }
+
     const hash = await bcrypt.hash(password, 12);
-    await repo.insert({
-      username,
-      email,
-      password: hash,
-      fullName: 'Quản trị viên',
-      role: 'admin',
-      isActive: true,
-    });
-    console.log(`Đã thêm tài khoản admin mới "${username}" (${email}).`);
+    if (byUsername) {
+      await repo.update({ _id: byUsername._id }, { password: hash, role: 'admin', isActive: true });
+      console.log(`Đã ghi đè mật khẩu của tài khoản "${username}" (role=admin, đang hoạt động).`);
+    } else {
+      await repo.insert({
+        username,
+        email,
+        password: hash,
+        fullName: 'Quản trị viên',
+        role: 'admin',
+        isActive: true,
+      });
+      console.log(`Đã tạo tài khoản admin mới "${username}" (${email}).`);
+    }
   } finally {
     await ds.destroy();
   }
