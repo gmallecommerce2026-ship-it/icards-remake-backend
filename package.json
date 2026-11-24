@@ -24,6 +24,7 @@
     "test:e2e": "vitest run --config ./vitest.config.e2e.ts",
     "seed": "npm run build:once && node --env-file-if-exists=.env dist/seed/seed.js",
     "seed:admin": "npm run build:once && node --env-file-if-exists=.env dist/seed/admin.seed.js",
+    "seed:add-admin": "npm run build:once && node --env-file-if-exists=.env dist/seed/add-admin.seed.js",
     "db:ensure-templates": "node --env-file-if-exists=.env scripts/migrations/ensure-template-schema.mjs"
   },
   "dependencies": {
